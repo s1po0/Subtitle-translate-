@@ -76,7 +76,7 @@ function App(){
   if(Capacitor.getPlatform()==='android'){try{await TranslationBackground.start();}catch{setError('پاشبنەما چالاک نەبوو؛ ئەپەکە کراوە بهێڵە.');}}
   try{
    await translateQueue(selected,{provider,source:settings.source,glossary:settings.glossary.split('\n').map(x=>x.trim()).filter(Boolean),signal:abort.signal,batchSize:settings.provider==='free'?(Capacitor.isNativePlatform()?32:10):128,onlyFailed,
-    onRow:(file,i,row,language)=>{const actual=selectedIndices[file];setFiles(prev=>prev.map((f,j)=>j===actual?{...f,detected:language||f.detected,rows:f.rows.map((r,k)=>k===i?row:r)}:f));if(actual===activeFile){setRows(prev=>prev.map((r,j)=>j===i?row:r));if(language)setDetected(language);}},
+    onRows:(file,updates)=>{const actual=selectedIndices[file];const replacements=new Map(updates.map(u=>[u.index,u.row]));const language=updates.find(u=>u.detected)?.detected;const updateRows=(old:Row[])=>old.map((r,i)=>replacements.get(i)||r);setFiles(prev=>prev.map((f,j)=>j===actual?{...f,detected:language||f.detected,rows:updateRows(f.rows)}:f));if(actual===activeFile){setRows(updateRows);if(language)setDetected(language);}},
     onProgress:(finished,total,file)=>{setProgress(total?Math.round(finished/total*100):100);setProgressFile(selected[file].name);}});
   }catch(e){if(!abort.signal.aborted)setError(e instanceof Error?e.message:'هەڵەی وەرگێڕان');}
   finally{if(Capacitor.getPlatform()==='android'){try{await TranslationBackground.stop();}catch{/* already stopped */}}setBusy(false);controller.current=null;}

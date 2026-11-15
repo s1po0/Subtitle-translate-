@@ -44,13 +44,16 @@ jobs:
           "$ANDROID_HOME/build-tools/$(ls "$ANDROID_HOME/build-tools" | sort -V | tail -1)/apksigner" verify --print-certs "$APK"
       - name: Live Google batch smoke test
         run: node scripts/google-widget-smoke.mjs
+      - name: Live multi-file benchmark
+        continue-on-error: true
+        run: node scripts/google-multifile-smoke.mjs
       - name: Publish direct APK download
         if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[publish-apk]')
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          cp android/app/build/outputs/apk/release/app-release.apk Rizhnus-2.0.apk
-          gh release create "apk-${{ github.run_id }}" Rizhnus-2.0.apk --target "${{ github.sha }}" --title "Rizhnus 2.0 APK" --notes "Signed Android APK." --latest=false
+          cp android/app/build/outputs/apk/release/app-release.apk Rizhnus-2.1.apk
+          gh release create "apk-${{ github.run_id }}" Rizhnus-2.1.apk --target "${{ github.sha }}" --title "Rizhnus 2.1 APK" --notes "Signed Android APK." --latest=false
       - uses: actions/upload-artifact@v4
         with:
           name: rizhnus-signed-apk

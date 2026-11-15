@@ -22,4 +22,12 @@ describe('multi-file translation queue',()=>{
   expect(files[0].rows[0].text).toBe('بەدەست نووسراو');expect(files[1].rows[0].text).toBe('پێشتر وەرگێڕدراو');expect(last).toBe(1);
  });
 
+ it('applies completed rows together and reuses the cache on a later run',async()=>{
+  const first=fixture('cache.srt',12),second=fixture('again.srt',12);let batches=0;
+  const translate=vi.fn(async(texts:string[])=>texts.map(text=>({text:text.replace('Hello','سڵاو')})));
+  const provider:TranslationProvider={name:'bulk-cache-test',translate};
+  const run=(f:SessionFile)=>translateQueue([f],{provider,source:'auto',glossary:[],signal:new AbortController().signal,batchSize:32,onlyFailed:false,onRows:(_file,updates)=>{batches++;for(const u of updates)f.rows[u.index]=u.row;},onProgress:()=>{}});
+  await run(first);expect(batches).toBe(1);expect(translate).toHaveBeenCalledTimes(1);await run(second);expect(translate).toHaveBeenCalledTimes(1);expect(second.rows.every(r=>r.status==='done')).toBe(true);
+ });
+
 });
