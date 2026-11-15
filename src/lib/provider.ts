@@ -1,4 +1,3 @@
-import { batchTranslate } from 'google-translate-api-x';
 import { Capacitor, CapacitorHttp } from '@capacitor/core';
 export interface TranslationResult { text:string; detected?:string }
 export interface TranslationProvider { name:string; translate(texts:string[], source:string, signal:AbortSignal):Promise<TranslationResult[]> }
@@ -20,74 +19,46 @@ function rateLimit(headers?:Record<string,string>, existing=false):Error {
  const error=new Error('Google (429): داواکاری زۆر بووە. چەند خولەکێک چاوەڕێ بکە، پاشان دووبارە هەوڵ بدەرەوە.');
  error.name='ProviderUnavailable';return error;
 }
+// Public key distributed in Google's website-translation widget; not a user credential.
+// This undocumented service can change or impose limits without notice.
+const WIDGET_KEY='AIzaSyATBXajvzQLTDHEQbcpq0Ihe0vWDHmO520';
+const WIDGET_URL='https://translate-pa.googleapis.com/v1/translateHtml';
 export class GoogleFree implements TranslationProvider {
- name='google-free-v2';
+ name='google-free-widget-v1';
  async translate(texts:string[],source:string,signal:AbortSignal):Promise<TranslationResult[]> {
+  if(signal.aborted) throw new DOMException('Cancelled','AbortError');
   if(Date.now()<rateLimitedUntil) throw rateLimit(undefined,true);
-  // Repeated protected strings can share one request without merging cue positions.
-  const unique=[...new Set(texts)];
-  const results=await (Capacitor.isNativePlatform() && unique.length>1 ? this.batch(unique,source,signal) : this.individual(unique,source,signal));
-  const map=new Map(unique.map((text,i)=>[text,results[i]]));
-  return texts.map(text=>map.get(text)!);
- }
- private async batch(texts:string[],source:string,signal:AbortSignal):Promise<TranslationResult[]> {
+  const unique=[...new Set(texts.filter(t=>t.trim()))];
+  if(!unique.length)return texts.map(text=>({text}));
+  const payload=[[unique,source,'ckb'],'te_lib'];
+  let data:unknown;
   try {
-   const result=await batchTranslate(texts,{from:source,to:'ckb',forceFrom:true,forceTo:true,rejectOnPartialFail:true,requestFunction:async (url:string,init:RequestInit)=>{
-    if(signal.aborted) throw new DOMException('Cancelled','AbortError');
-    const response=await CapacitorHttp.post({url,headers:{'Content-Type':'application/x-www-form-urlencoded;charset=UTF-8'},data:String(init.body||''),responseType:'text',connectTimeout:15000,readTimeout:30000});
-    if(signal.aborted) throw new DOMException('Cancelled','AbortError');
-    if(response.status===429) throw rateLimit(response.headers);
-    return {ok:response.status>=200&&response.status<300,statusText:`Google (${response.status})`,text:async()=>typeof response.data==='string'?response.data:JSON.stringify(response.data)};
-   }});
-   if(!Array.isArray(result)||result.length!==texts.length) throw new Error('وەڵامی دەستەکە تەواو نییە.');
-   const output:TranslationResult[]=result.map((item,i)=>{
-    if(!item||typeof item.text!=='string'||(texts[i].trim()&&!item.text.trim())) throw new Error('وەڵامی دەستەکە تەواو نییە.');
-    // Fail closed if Google drops or changes a formatting placeholder.
-    for(const marker of texts[i].match(/ZXQ\d+QXZ/g)||[]) if(!item.text.includes(marker)) throw new Error('پاراستنی نیشانەکان سەرکەوتوو نەبوو.');
-    return {text:item.text,detected:item.from?.language?.iso};
-   });
-   return output;
-  } catch(error) {
-   if(signal.aborted || (error instanceof Error && error.name==='ProviderUnavailable')) throw error;
-   // The unofficial batch protocol may change. Retry independently instead of risking alignment.
-   return this.individual(texts,source,signal);
-  }
- }
- private async individual(texts:string[],source:string,signal:AbortSignal):Promise<TranslationResult[]> {
-  const results:TranslationResult[]=[];
-  for(let start=0;start<texts.length;start+=1){
-   const chunk=texts.slice(start,start+1);
-   results.push(...await Promise.all(chunk.map(async text=>{
-   const url=new URL('https://translate.googleapis.com/translate_a/single');
-   url.search=new URLSearchParams({client:'gtx',sl:source,tl:'ckb',dt:'t'}).toString();
-   let data:unknown;
-   try {
-    if (signal.aborted) throw new DOMException('Cancelled','AbortError');
-    if (Capacitor.isNativePlatform()) {
-     // Native HTTP is not subject to WebView CORS. Never send the optional API key here.
-     const res=await CapacitorHttp.post({url:url.toString(),headers:{'Content-Type':'application/x-www-form-urlencoded'},data:new URLSearchParams({q:text}).toString(),connectTimeout:15000,readTimeout:20000,responseType:'json'});
-     if (signal.aborted) throw new DOMException('Cancelled','AbortError');
-     if(res.status===429) throw rateLimit(res.headers);
-     if(res.status<200||res.status>=300) throw new Error(`Google (${res.status}): وەرگێڕان سەرنەکەوت.`);
-     data=res.data;
-    } else {
-     const res=await fetch(url,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams({q:text}),signal});
-     if(res.status===429) throw rateLimit(Object.fromEntries(res.headers.entries()));
-     if(!res.ok) throw new Error(`Google (${res.status}): وەرگێڕان سەرنەکەوت.`);
-     data=await res.json();
-    }
-   } catch(error) {
-    if(signal.aborted) throw error;
-    if(error instanceof Error && (error.name==='ProviderUnavailable' || /^Google \(\d+\)/.test(error.message))) throw error;
-    const unavailable=new Error('پەیوەندی بە وەرگێڕی خۆڕایی نەکرا. لەوانەیە Google داواکارییەکەی ڕاگرتبێت؛ دواتر هەوڵبدەرەوە.'); unavailable.name='ProviderUnavailable'; throw unavailable;
+   if(Capacitor.isNativePlatform()){
+    const res=await CapacitorHttp.post({url:WIDGET_URL,headers:{'Content-Type':'application/json+protobuf','X-Goog-API-Key':WIDGET_KEY},data:payload,responseType:'json',connectTimeout:15000,readTimeout:30000});
+    if(signal.aborted)throw new DOMException('Cancelled','AbortError');
+    if(res.status===429)throw rateLimit(res.headers);
+    if(res.status<200||res.status>=300)throw new Error(`Google (${res.status}): وەرگێڕان سەرنەکەوت.`);
+    data=res.data;
+   } else {
+    const res=await fetch(WIDGET_URL,{method:'POST',headers:{'Content-Type':'application/json+protobuf','X-Goog-API-Key':WIDGET_KEY},body:JSON.stringify(payload),signal});
+    if(res.status===429)throw rateLimit(Object.fromEntries(res.headers.entries()));
+    if(!res.ok)throw new Error(`Google (${res.status}): وەرگێڕان سەرنەکەوت.`);
+    data=await res.json();
    }
-   if(!Array.isArray(data)||!Array.isArray(data[0])) throw new Error('وەڵامی Google نادروستە.');
-   const translated=(data[0] as unknown[]).map(part=>Array.isArray(part)&&typeof part[0]==='string'?part[0]:'').join('');
-   if(text.trim() && !translated.trim()) throw new Error('وەڵامی Google بەتاڵە.');
-   return {text:translated,detected:typeof data[2]==='string'?data[2]:undefined};
-  })));
+  } catch(error){
+   if(signal.aborted || (error instanceof Error && (error.name==='ProviderUnavailable'||/^Google \(\d+\)/.test(error.message))))throw error;
+   const unavailable=new Error('پەیوەندی بە وەرگێڕی Google نەکرا. ئینتەرنێت بپشکنە و دواتر هەوڵ بدەرەوە.');unavailable.name='ProviderUnavailable';throw unavailable;
   }
-  return results;
+  if(!Array.isArray(data)||!Array.isArray(data[0])||data[0].length!==unique.length)throw new Error('وەڵامی Google تەواو نییە.');
+  const translations=data[0] as unknown[];const languages=Array.isArray(data[1])?data[1] as unknown[]:[];
+  const results=new Map<string,TranslationResult>();
+  unique.forEach((text,i)=>{
+   const translated=translations[i];
+   if(typeof translated!=='string'||!translated.trim())throw new Error('وەڵامی Google بەتاڵ یان نادروستە.');
+   for(const marker of text.match(/ZXQ\d+QXZ/g)||[])if(!translated.includes(marker))throw new Error('پاراستنی نیشانەکانی ژێرنووس سەرکەوتوو نەبوو.');
+   results.set(text,{text:translated,detected:typeof languages[i]==='string'?languages[i] as string:undefined});
+  });
+  return texts.map(text=>text.trim()?results.get(text)!:{text});
  }
 }
 export async function withRetry<T>(fn:()=>Promise<T>,signal:AbortSignal):Promise<T> { let last:unknown; for(let i=0;i<4;i++) {if(signal.aborted) throw new DOMException('Cancelled','AbortError'); try {return await fn();} catch(e) {last=e; if(signal.aborted) throw e; if(i===3 || (e instanceof Error && e.name==='ProviderUnavailable') || (e instanceof Error && /Google \((400|401|403)\)/.test(e.message))) break; await new Promise<void>((resolve,reject)=>{const timer=setTimeout(resolve, 700*2**i+Math.random()*300); signal.addEventListener('abort',()=>{clearTimeout(timer);reject(new DOMException('Cancelled','AbortError'));},{once:true});});}} throw last; }

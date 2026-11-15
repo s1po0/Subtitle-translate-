@@ -1,10 +1,12 @@
 Reference material (no source code copied):
 - rockbenben/subtitle-translator, MIT: https://github.com/rockbenben/subtitle-translator — architecture and format behavior; its language list includes ckb. Its README notes context-aware translation is LLM-only.
 - subsrt-ts, MIT: https://github.com/rakuzen25/subsrt-ts — parser package considered; this project uses independently written parsers to retain original timings and format details.
-- google-translate-api-x, MIT: https://github.com/AidanWelch/google-translate-api — included dependency for unofficial batch translation. Copyright (c) Aidan Welch and contributors; see node_modules/google-translate-api-x/LICENSE when installed or the upstream repository for the MIT license.
+- google-translate-api-x, MIT: https://github.com/AidanWelch/google-translate-api — previously used; no longer included.
 - Subtitle Edit: https://github.com/SubtitleEdit/subtitleedit — UX reference only, no code copied.
 Dependencies and their licenses are available in package-lock.json and the respective packages.
 
 - morluto/rea, MIT: https://github.com/morluto/rea — methodology reviewed; no REA code copied or bundled.
 - JSZip, MIT or GPL-3.0 (MIT selected): https://github.com/Stuk/jszip — dependency for client-side ZIP export.
 - subtitlestranslator.com and translatesubtitles.co — public descriptions used for UX research only; no code copied.
+
+- Google website translation widget protocol: independently implemented based on public discussion https://github.com/ssut/py-googletrans/issues/268 and rockbenben/subtitle-translator; the embedded widget key is public, not a user credential.
