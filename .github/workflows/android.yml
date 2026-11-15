@@ -40,7 +40,11 @@ jobs:
         run: ./gradlew assembleRelease
       - name: Build emulator test packages
         working-directory: android
-        run: ./gradlew assembleDebug assembleDebugAndroidTest
+        run: |
+          ./gradlew assembleDebug assembleDebugAndroidTest > "$RUNNER_TEMP/android-test-build.log" 2>&1 || {
+            tail -n 70 "$RUNNER_TEMP/android-test-build.log" | while IFS= read -r line; do echo "::error::$line"; done
+            exit 1
+          }
       - uses: actions/upload-artifact@v4
         with:
           name: android-emulator-test
