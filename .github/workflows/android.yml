@@ -38,20 +38,6 @@ jobs:
           ANDROID_KEYSTORE_PATH: ${{ runner.temp }}/rizhnus-signing.p12
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
         run: ./gradlew assembleRelease
-      - name: Build emulator test packages
-        working-directory: android
-        run: |
-          ./gradlew assembleDebug assembleDebugAndroidTest > "$RUNNER_TEMP/android-test-build.log" 2>&1 || {
-            tail -n 70 "$RUNNER_TEMP/android-test-build.log" | while IFS= read -r line; do echo "::error::$line"; done
-            exit 1
-          }
-      - uses: actions/upload-artifact@v4
-        with:
-          name: android-emulator-test
-          path: |
-            android/app/build/outputs/apk/debug/app-debug.apk
-            android/app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk
-          if-no-files-found: error
       - name: Verify APK signature
         run: |
           APK=android/app/build/outputs/apk/release/app-release.apk
@@ -60,6 +46,20 @@ jobs:
         with:
           name: rizhnus-signed-apk
           path: android/app/build/outputs/apk/release/app-release.apk
+          if-no-files-found: error
+      - name: Build emulator test packages
+        working-directory: android
+        run: |
+          ./gradlew :app:assembleDebug :app:assembleDebugAndroidTest > "$RUNNER_TEMP/android-test-build.log" 2>&1 || {
+            grep -iE "error:|failed|what went wrong|could not|exception|symbol|location:" "$RUNNER_TEMP/android-test-build.log" | tail -n 9 | while IFS= read -r line; do echo "::error::$line"; done
+            exit 1
+          }
+      - uses: actions/upload-artifact@v4
+        with:
+          name: android-emulator-test
+          path: |
+            android/app/build/outputs/apk/debug/app-debug.apk
+            android/app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk
           if-no-files-found: error
       - name: Remove key from runner
         if: always()
