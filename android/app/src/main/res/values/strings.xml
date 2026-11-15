@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">ڕیزنووس</string>
+    <string name="title_activity_main">ڕیزنووس</string>
+    <string name="package_name">com.rizhnus.subtitle</string>
+    <string name="custom_url_scheme">com.rizhnus.subtitle</string>
+</resources>

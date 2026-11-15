@@ -1,0 +1,52 @@
+name: Android signed APK
+on:
+  push:
+    branches: ['arena/1a1ab4d2-subtitle-translate']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+      - run: npm ci
+      - run: npm run build && npx cap sync android
+      - name: Prepare signing key
+        env:
+          SIGNING_DATA: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          SIGNING_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+        run: |
+          if [ -z "$SIGNING_DATA" ] || [ -z "$SIGNING_PASSWORD" ]; then
+            echo 'Signing secrets are not configured; refusing to publish an unsigned APK.' >&2
+            exit 1
+          fi
+          echo "$SIGNING_DATA" | base64 --decode > "$RUNNER_TEMP/rizhnus-signing.p12"
+          chmod 600 "$RUNNER_TEMP/rizhnus-signing.p12"
+      - name: Build signed APK
+        working-directory: android
+        env:
+          ANDROID_KEYSTORE_PATH: ${{ runner.temp }}/rizhnus-signing.p12
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+        run: ./gradlew assembleRelease
+      - name: Verify APK signature
+        run: |
+          APK=android/app/build/outputs/apk/release/app-release.apk
+          "$ANDROID_HOME/build-tools/$(ls "$ANDROID_HOME/build-tools" | sort -V | tail -1)/apksigner" verify --print-certs "$APK"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: rizhnus-signed-apk
+          path: android/app/build/outputs/apk/release/app-release.apk
+          if-no-files-found: error
+      - name: Remove key from runner
+        if: always()
+        run: rm -f "$RUNNER_TEMP/rizhnus-signing.p12"

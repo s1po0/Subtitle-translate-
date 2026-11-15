@@ -4,3 +4,9 @@ dist
 .env.*
 !.env.example
 *.tsbuildinfo
+*.jks
+*.keystore
+*.p12
+*.pfx
+
+.local/
