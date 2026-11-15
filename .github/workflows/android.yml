@@ -17,8 +17,8 @@ jobs:
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: '17'
-      - uses: android-actions/setup-android@v3
+          java-version: '21'
+      # GitHub-hosted Ubuntu runners already include the Android SDK.
       - run: npm ci
       - run: npm run build && npx cap sync android
       - name: Prepare signing key
