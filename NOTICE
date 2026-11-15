@@ -4,3 +4,7 @@ Reference material (no source code copied):
 - google-translate-api-x, MIT: https://github.com/AidanWelch/google-translate-api — included dependency for unofficial batch translation. Copyright (c) Aidan Welch and contributors; see node_modules/google-translate-api-x/LICENSE when installed or the upstream repository for the MIT license.
 - Subtitle Edit: https://github.com/SubtitleEdit/subtitleedit — UX reference only, no code copied.
 Dependencies and their licenses are available in package-lock.json and the respective packages.
+
+- morluto/rea, MIT: https://github.com/morluto/rea — methodology reviewed; no REA code copied or bundled.
+- JSZip, MIT or GPL-3.0 (MIT selected): https://github.com/Stuk/jszip — dependency for client-side ZIP export.
+- subtitlestranslator.com and translatesubtitles.co — public descriptions used for UX research only; no code copied.
