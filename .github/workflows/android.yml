@@ -50,3 +50,28 @@ jobs:
       - name: Remove key from runner
         if: always()
         run: rm -f "$RUNNER_TEMP/rizhnus-signing.p12"
+  emulator-smoke:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: rizhnus-signed-apk
+          path: apk
+      - name: Enable emulator acceleration
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Install and launch APK on Android emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 29
+          arch: x86_64
+          target: default
+          disable-animations: true
+          script: |
+            adb install apk/app-release.apk
+            adb shell am start -n com.rizhnus.subtitle/.MainActivity
+            sleep 10
+            adb shell pidof com.rizhnus.subtitle
