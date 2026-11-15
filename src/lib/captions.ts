@@ -51,7 +51,7 @@ export async function transcribeChunks(duration:number,progress:CaptionProgress,
   update(index,total);const start=index*size,end=Math.min(duration,start+size);const chunk=await extract(start,end);
   if(!chunk.silent){
    const result=await transcribe(chunk.audio);const text=result.text||'';
-   if(!Array.isArray(result.words)||!result.words.length){if(text.trim())throw new Error('دەقی ئەم بەشە کاتی وشەی نییە؛ هیچ ژێرنووسێکی تەواو دروست نەکرا.');}
+   if(!Array.isArray(result.words)||!result.words.length){if(text.trim())throw new Error('دەقی ئەم بەشە کاتی وشەی نییە؛ هیچ ژێرنووسێکی تەواو دروست نەکرا.');progress.warnings++;}
    else {
     const local=wordsToSubtitle(result.words,end-start);
     const full=text.replace(/[^\p{L}\p{N}]/gu,'').toLowerCase(),timed=local.cues.map(c=>c.text).join('').replace(/[^\p{L}\p{N}]/gu,'').toLowerCase();

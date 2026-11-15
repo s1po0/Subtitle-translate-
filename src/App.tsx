@@ -57,7 +57,7 @@ function App(){
    const entry:FileEntry={doc:generated,name:generatedName,encoding:'utf-8',rows:generated.cues.map(()=>({text:'',status:'pending'})),output:'srt',detected:''};
    touched.current=true;const current=doc?{doc,name,encoding,rows,output,detected}:null;const next=appendFiles(files,activeFile,current,[entry]);setFiles(next);setActiveFile(next.length-1);setDoc(entry.doc);setName(entry.name);setEncoding(entry.encoding);setRows(entry.rows);setOutput('srt');setDetected('');setProgress(0);setAutoCaption(true);
    captionProgress.current={next:0,words:[],warnings:0};
-   setCaptionStatus(`ژێرنووسی زمانی سەرچاوە ئامادەیە؛ وەرگێڕان دەست پێدەکات. پێش داگرتن بیپشکنە.${progress.warnings?' ئاگاداری: دەقی هەندێک بەش و وشە کات‌دیاریکراوەکان تەواو ناگونجێن؛ لەوانەیە بەشێک ون بێت.':''}`);
+   setCaptionStatus(`ژێرنووسی زمانی سەرچاوە ئامادەیە؛ وەرگێڕان دەست پێدەکات. پێش داگرتن بیپشکنە.${progress.warnings?' ئاگاداری: هەندێک بەش دەق یان کاتی تەواویان نەبوو؛ لەوانەیە بەشێک ون بێت.':''}`);
   } catch(e){console.error('Caption generation failed',e);setCaptionStatus(`دروستکردنی ژێرنووس سەرنەکەوت. چوونەژوورەوە، ئینتەرنێت، سنووری Puter و فۆرماتی ڤیدیۆ بپشکنە. دووبارە هەوڵبدەوە؛ بەشە تەواوکراوەکان تا کاتی داخستنی ئەپ پارێزراون. ${e instanceof Error?e.message:''}`);}
   finally{setCaptionBusy(false);}
  }

@@ -19,3 +19,9 @@ describe('chunked transcription',()=>{
 describe('WAV chunking',()=>{
  it('keeps exact sample ranges and updates the WAV sizes',async()=>{const {sliceWav}=await import('./captions');const bytes=new Uint8Array(44+16000*2*3);for(let i=44;i<bytes.length;i++)bytes[i]=i%251;const part=await sliceWav(new Blob([bytes]),1,2);const arr=new Uint8Array(await part.arrayBuffer());const header=new DataView(arr.buffer);expect(arr.length).toBe(44+32000);expect(header.getUint32(4,true)).toBe(32036);expect(header.getUint32(40,true)).toBe(32000);expect(arr[44]).toBe(bytes[32044]);});
 });
+
+it('processes 30 minutes with correct offsets using bounded two-minute chunks',async()=>{
+ const {transcribeChunks}=await import('./captions');const progress={next:0,words:[],warnings:0};const extract=vi.fn(async()=>({audio:new Blob(),silent:false}));
+ await transcribeChunks(1800,progress,extract,async()=>({text:'test',words:[{text:'test',start:1,end:2}]}),()=>{});
+ expect(extract).toHaveBeenCalledTimes(15);expect(progress.words[14]).toEqual({text:'test',start:1681,end:1682});expect(progress.next).toBe(15);
+});

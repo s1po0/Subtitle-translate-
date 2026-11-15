@@ -24,6 +24,8 @@ public class AudioChunksTest {
         try {
             AudioChunks.Result before=AudioChunks.decode(context,Uri.fromFile(fixture),118,120);
             AudioChunks.Result after=AudioChunks.decode(context,Uri.fromFile(fixture),120,122);
+            AudioChunks.Result last=AudioChunks.decode(context,Uri.fromFile(fixture),1798,1800);
+            assertEquals(before.wav.length,last.wav.length); assertFalse(last.silent);
             assertEquals(44+2*16000*2,before.wav.length);assertEquals(before.wav.length,after.wav.length);
             assertFalse(before.silent);assertFalse(after.silent);
             ByteBuffer header=ByteBuffer.wrap(after.wav).order(ByteOrder.LITTLE_ENDIAN);
