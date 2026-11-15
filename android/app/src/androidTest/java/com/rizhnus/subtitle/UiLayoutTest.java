@@ -60,4 +60,24 @@ public class UiLayoutTest {
         }
     }
 
+    @Test public void userGestureOpensIsolatedAuthPopup() throws Exception {
+        try (ActivityScenario<MainActivity> activity = ActivityScenario.launch(MainActivity.class)) {
+            for (int i=0;i<20;i++) {
+                Thread.sleep(1000);
+                String ready=javascript(activity,"(function(){if(!document.querySelector('.dropzone'))return 'wait';var b=document.createElement('button');b.id='popup-test';b.textContent='test';b.style='position:fixed;z-index:999999;left:30px;top:60px;width:160px;height:100px';b.onclick=function(){window.open('https://puter.com/action/sign-in?embedded_in_popup=true','test','width=600,height=700')};document.body.appendChild(b);return 'ok'})()");
+                if(ready.contains("ok"))break;
+            }
+            AtomicReference<int[]> location=new AtomicReference<>();
+            activity.onActivity(a->{int[] xy=new int[2];a.getBridge().getWebView().getLocationOnScreen(xy);location.set(xy);});
+            int[] xy=location.get();long now=android.os.SystemClock.uptimeMillis();
+            android.app.Instrumentation inst=androidx.test.platform.app.InstrumentationRegistry.getInstrumentation();
+            inst.sendPointerSync(android.view.MotionEvent.obtain(now,now,android.view.MotionEvent.ACTION_DOWN,xy[0]+80,xy[1]+100,0));
+            inst.sendPointerSync(android.view.MotionEvent.obtain(now,now+100,android.view.MotionEvent.ACTION_UP,xy[0]+80,xy[1]+100,0));
+            Thread.sleep(2000);
+            AtomicReference<Boolean> visible=new AtomicReference<>(false);
+            activity.onActivity(a->{visible.set(a.authChromeClient.popupVisible());a.authChromeClient.closePopup();});
+            assertTrue("User-initiated popup should open inside app",visible.get());
+        }
+    }
+
 }

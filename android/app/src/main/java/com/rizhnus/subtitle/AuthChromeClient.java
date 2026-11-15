@@ -21,6 +21,9 @@ public final class AuthChromeClient extends BridgeWebChromeClient {
     private Dialog dialog;
     AuthChromeClient(Bridge bridge, MainActivity activity) { super(bridge); this.activity = activity; }
 
+    boolean popupVisible() { return dialog != null && dialog.isShowing(); }
+    void closePopup() { if (dialog != null) dialog.dismiss(); }
+
     @SuppressLint("SetJavaScriptEnabled")
     @Override public boolean onCreateWindow(WebView source, boolean isDialog, boolean userGesture, Message message) {
         if (source != activity.getBridge().getWebView() || !userGesture || dialog != null || !(message.obj instanceof WebView.WebViewTransport)) return false;
