@@ -10,3 +10,5 @@ html,body,#root{width:100%;min-height:100%;margin:0}body{background:#101615}.app
 .all-files{margin-top:14px;justify-content:center}.all-files:hover{border-color:var(--accent);color:var(--accent)}@media(max-width:760px){.all-files{width:100%}}
 
 .progress>div:first-child{gap:10px}.progress bdi{overflow-wrap:anywhere}
+
+@media(max-width:600px){td.time{width:100%;min-width:0;justify-content:flex-start}.time b,.time span{white-space:nowrap;overflow-wrap:normal;word-break:normal}.time span{display:inline-block}}

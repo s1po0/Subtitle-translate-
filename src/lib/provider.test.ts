@@ -34,3 +34,22 @@ describe('batched Android translations',()=>{
   try{const out=await new GoogleFree().translate(['ZXQ0QXZ','two'],'auto',new AbortController().signal);expect(out.map(x=>x.text)).toEqual(['ZXQ0QXZ','two']);expect(nativeMock.post).toHaveBeenCalledTimes(2);}finally{nativeMock.isNative.mockReturnValue(false);nativeMock.batch.mockReset();nativeMock.post.mockReset();}
  });
 });
+
+
+describe('rate limiting',()=>{
+ it('stops on a 429 without falling back to individual requests and respects cooldown',async()=>{
+  vi.useFakeTimers();nativeMock.isNative.mockReturnValue(true);
+  nativeMock.post.mockResolvedValue({status:429,data:'',headers:{'Retry-After':'120'},url:''});
+  nativeMock.batch.mockImplementation(async (_texts,opts)=>opts.requestFunction('https://translate.google.com', {body:'x'}));
+  try {
+   const provider=new GoogleFree();const signal=new AbortController().signal;
+   await expect(withRetry(()=>provider.translate(['one','two'],'auto',signal),signal)).rejects.toMatchObject({name:'ProviderUnavailable',message:expect.stringContaining('429')});
+   expect(nativeMock.post).toHaveBeenCalledTimes(1);
+   await expect(provider.translate(['one'],'auto',signal)).rejects.toMatchObject({name:'ProviderUnavailable'});
+   expect(nativeMock.post).toHaveBeenCalledTimes(1);
+   vi.advanceTimersByTime(120001);
+   nativeMock.post.mockResolvedValue({status:200,data:[[['سڵاو','hello']],null,'en'],headers:{},url:''});
+   expect((await provider.translate(['hello'],'auto',signal))[0].text).toBe('سڵاو');
+  } finally {vi.useRealTimers();nativeMock.isNative.mockReturnValue(false);nativeMock.batch.mockReset();nativeMock.post.mockReset();}
+ });
+});

@@ -47,8 +47,8 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          cp android/app/build/outputs/apk/release/app-release.apk Rizhnus-1.7.apk
-          gh release create "apk-${{ github.run_id }}" Rizhnus-1.7.apk --target "${{ github.sha }}" --title "Rizhnus 1.7 APK" --notes "Signed Android APK." --latest=false
+          cp android/app/build/outputs/apk/release/app-release.apk Rizhnus-1.8.apk
+          gh release create "apk-${{ github.run_id }}" Rizhnus-1.8.apk --target "${{ github.sha }}" --title "Rizhnus 1.8 APK" --notes "Signed Android APK." --latest=false
       - uses: actions/upload-artifact@v4
         with:
           name: rizhnus-signed-apk

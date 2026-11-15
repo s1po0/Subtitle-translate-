@@ -43,7 +43,7 @@ export async function translateQueue(files:SessionFile[], options:QueueOptions):
      for(const item of pending)mark(file,item.i,{text:'',status:'failed',error:error.message});
      throw error;
     }
-    for(const item of pending){if(signal.aborted)return;try{await apply([item]);}catch(e){if(signal.aborted)return;mark(file,item.i,{text:'',status:'failed',error:e instanceof Error?e.message:'هەڵەی وەرگێڕان'});}}
+    for(const item of pending){if(signal.aborted)return;try{await apply([item]);}catch(e){if(signal.aborted)return;mark(file,item.i,{text:'',status:'failed',error:e instanceof Error?e.message:'هەڵەی وەرگێڕان'});if(e instanceof Error && e.name==='ProviderUnavailable')throw e;}}
    }
   }
  }
