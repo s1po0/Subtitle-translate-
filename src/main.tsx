@@ -1,3 +1,4 @@
+import 'core-js/actual/string/replace-all';
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { createRootRoute, createRoute, createRouter, RouterProvider } from '@tanstack/react-router';
