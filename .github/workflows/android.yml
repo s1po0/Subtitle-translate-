@@ -61,6 +61,8 @@ jobs:
           if-no-files-found: error
       - name: Generate synthetic audio test fixture
         run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg
           mkdir -p android/app/src/androidTest/assets
           ffmpeg -hide_banner -loglevel error -f lavfi -i 'sine=frequency=440:sample_rate=44100:duration=125' -c:a aac -b:a 48k android/app/src/androidTest/assets/fixture.m4a
       - name: Build emulator test packages
