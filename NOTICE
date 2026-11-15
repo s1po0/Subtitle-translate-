@@ -10,3 +10,5 @@ Dependencies and their licenses are available in package-lock.json and the respe
 - subtitlestranslator.com and translatesubtitles.co — public descriptions used for UX research only; no code copied.
 
 - Google website translation widget protocol: independently implemented based on public discussion https://github.com/ssut/py-googletrans/issues/268 and rockbenben/subtitle-translator; the embedded widget key is public, not a user credential.
+
+- Anthropic frontend-design and webapp-testing skills: https://github.com/anthropics/skills — design and testing guidance reviewed; no skill source code copied.

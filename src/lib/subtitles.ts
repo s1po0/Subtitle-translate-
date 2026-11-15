@@ -32,7 +32,7 @@ export function parseSubtitle(input: string, format: Format): Subtitle {
  return {format,cues};
 }
 function ms(t:string): number { const p=t.replace(',','.').split(':'); const sec=Number(p.pop()); const min=Number(p.pop()||0); const h=Number(p.pop()||0); return Math.round(((h*60+min)*60+sec)*1000); }
-function stamp(t:string, format:Format):string { const n=ms(t); const h=Math.floor(n/3600000), m=Math.floor(n/60000)%60, s=Math.floor(n/1000)%60, frac=n%1000; const pad=(v:number,l=2)=>String(v).padStart(l,'0'); return format==='ass'||format==='ssa' ? `${h}:${pad(m)}:${pad(s)}.${pad(Math.round(frac/10))}` : `${pad(h)}:${pad(m)}:${pad(s)}${format==='srt'?',':'.'}${pad(frac,3)}`; }
+function stamp(t:string, format:Format):string { const ass=format==='ass'||format==='ssa'; const n=ass?Math.round(ms(t)/10)*10:ms(t); const h=Math.floor(n/3600000), m=Math.floor(n/60000)%60, s=Math.floor(n/1000)%60, frac=n%1000; const pad=(v:number,l=2)=>String(v).padStart(l,'0'); return ass ? `${h}:${pad(m)}:${pad(s)}.${pad(frac/10)}` : `${pad(h)}:${pad(m)}:${pad(s)}${format==='srt'?',':'.'}${pad(frac,3)}`; }
 export function exportSubtitle(doc:Subtitle, texts:string[], format:Format):string {
  if (format==='ass'||format==='ssa') {
   const same=(doc.format==='ass'||doc.format==='ssa') && doc.assFormat; const fields=doc.assFormat||[];
