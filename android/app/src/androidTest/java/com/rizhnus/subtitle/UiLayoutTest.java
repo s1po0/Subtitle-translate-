@@ -67,12 +67,13 @@ public class UiLayoutTest {
                 String ready=javascript(activity,"(function(){if(!document.querySelector('.dropzone'))return 'wait';var b=document.createElement('button');b.id='popup-test';b.textContent='test';b.style='position:fixed;z-index:999999;left:30px;top:60px;width:160px;height:100px';b.onclick=function(){window.open('https://puter.com/action/sign-in?embedded_in_popup=true','test','width=600,height=700')};document.body.appendChild(b);return 'ok'})()");
                 if(ready.contains("ok"))break;
             }
+            org.json.JSONArray coordinates=new org.json.JSONArray(javascript(activity,"(function(){var r=document.getElementById('popup-test').getBoundingClientRect();return [(r.left+r.right)/2,(r.top+r.bottom)/2,innerWidth]})()"));
             AtomicReference<int[]> location=new AtomicReference<>();
-            activity.onActivity(a->{int[] xy=new int[2];a.getBridge().getWebView().getLocationOnScreen(xy);location.set(xy);});
-            int[] xy=location.get();long now=android.os.SystemClock.uptimeMillis();
+            activity.onActivity(a->{int[] xy=new int[3];int[] origin=new int[2];a.getBridge().getWebView().getLocationOnScreen(origin);xy[0]=origin[0];xy[1]=origin[1];xy[2]=a.getBridge().getWebView().getWidth();location.set(xy);});
+            int[] xy=location.get();float scale=(float)(xy[2]/coordinates.getDouble(2));float x=xy[0]+(float)coordinates.getDouble(0)*scale,y=xy[1]+(float)coordinates.getDouble(1)*scale;long now=android.os.SystemClock.uptimeMillis();
             android.app.Instrumentation inst=androidx.test.platform.app.InstrumentationRegistry.getInstrumentation();
-            inst.sendPointerSync(android.view.MotionEvent.obtain(now,now,android.view.MotionEvent.ACTION_DOWN,xy[0]+80,xy[1]+100,0));
-            inst.sendPointerSync(android.view.MotionEvent.obtain(now,now+100,android.view.MotionEvent.ACTION_UP,xy[0]+80,xy[1]+100,0));
+            inst.sendPointerSync(android.view.MotionEvent.obtain(now,now,android.view.MotionEvent.ACTION_DOWN,x,y,0));
+            inst.sendPointerSync(android.view.MotionEvent.obtain(now,now+100,android.view.MotionEvent.ACTION_UP,x,y,0));
             Thread.sleep(2000);
             AtomicReference<Boolean> visible=new AtomicReference<>(false);
             activity.onActivity(a->{visible.set(a.authChromeClient.popupVisible());a.authChromeClient.closePopup();});
