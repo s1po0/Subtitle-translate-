@@ -1,0 +1,3 @@
+import { it, expect } from 'vitest';
+// Opt in with GOOGLE_TRANSLATE_API_KEY; requires network access and a billable Google Cloud project.
+it.skipIf(!process.env.GOOGLE_TRANSLATE_API_KEY)('Google translates Hello World to Arabic-script ckb',async()=>{const res=await fetch(`https://translation.googleapis.com/language/translate/v2?key=${encodeURIComponent(process.env.GOOGLE_TRANSLATE_API_KEY!)}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({q:['Hello World'],target:'ckb',format:'text'})});expect(res.ok).toBe(true);const data=await res.json();expect(data.data.translations[0].translatedText).toMatch(/[\u0600-\u06ff]/);});

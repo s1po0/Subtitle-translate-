@@ -1,0 +1,6 @@
+Reference material (no source code copied):
+- rockbenben/subtitle-translator, MIT: https://github.com/rockbenben/subtitle-translator — architecture and format behavior; its language list includes ckb. Its README notes context-aware translation is LLM-only.
+- subsrt-ts, MIT: https://github.com/rakuzen25/subsrt-ts — parser package considered; this project uses independently written parsers to retain original timings and format details.
+- google-translate-api-x, MIT: https://github.com/AidanWelch/google-translate-api — unofficial endpoint reference, not bundled.
+- Subtitle Edit: https://github.com/SubtitleEdit/subtitleedit — UX reference only, no code copied.
+Dependencies and their licenses are available in package-lock.json and the respective packages.

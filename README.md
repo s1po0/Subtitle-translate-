@@ -1,1 +1,7 @@
-# Subtitle-translate-
+# ڕیزنووس — Kurdish subtitle translator
+
+Client-side Vite/React subtitle translation to Central Kurdish (`ckb`). Upload SRT, VTT, ASS or SSA; configure a Google Cloud Translation API v2 key in Settings; review and download the result. The key stays in browser localStorage and is sent only to Google. Enable the Cloud Translation API and restrict the key by HTTP referrer and API in Google Cloud. Translation is billable under Google's terms. Subtitle text is sent to the selected Google service.
+
+The unofficial option may be blocked by CORS, rate-limited, or change without notice. No relay is deployed. Encoding detection for legacy encodings is heuristic and may be wrong. Google Cloud batches separate cue strings; it does not guarantee context across cue boundaries. Review output, especially ASS conversions and split sentences. WebVTT metadata blocks are skipped. For incomplete translations the original text is exported. ASS conversion to SRT/VTT can retain player-specific override syntax. Timestamp precision may change when converting between formats (ASS uses centiseconds). Never use a key in a committed environment file.
+
+Build: `npm install && npm run build`; checks: `npm run lint && npm test`. An opt-in live smoke test uses `GOOGLE_TRANSLATE_API_KEY` in the environment; it may incur charges. The default suite does not contact Google. Deploy the build directory `dist` with SPA fallback routing (e.g. Lovable/Vite-compatible hosting).
