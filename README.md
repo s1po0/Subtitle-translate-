@@ -9,3 +9,5 @@ Build: `npm install && npm run build`; checks: `npm run lint && npm test`. An op
 ## Android
 
 The Capacitor Android project uses application ID `com.rizhnus.subtitle`. Its release workflow builds and verifies a signed APK only when `ANDROID_KEYSTORE_BASE64` and `ANDROID_KEYSTORE_PASSWORD` are configured as GitHub Actions secrets. The signing key backup belongs in private storage, never in Git. Android exports are offered through the system share/save dialog. Android builds and device behavior require separate verification; the unofficial translation service can still be blocked by network or WebView CORS.
+
+You can select multiple subtitle files and switch between them; each file must currently be translated and exported separately. Android uses native HTTP for the unofficial Google request to avoid browser CORS, but Google can still block or change this endpoint. No Android emulator is available in this environment, so the native transport and installation have not been device-tested here.

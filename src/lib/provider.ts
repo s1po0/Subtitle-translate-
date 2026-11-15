@@ -1,3 +1,4 @@
+import { Capacitor, CapacitorHttp } from '@capacitor/core';
 export interface TranslationResult { text:string; detected?:string }
 export interface TranslationProvider { name:string; translate(texts:string[], source:string, signal:AbortSignal):Promise<TranslationResult[]> }
 export class GoogleCloud implements TranslationProvider {
@@ -15,14 +16,25 @@ export class GoogleFree implements TranslationProvider {
   return Promise.all(texts.map(async text=>{
    const url=new URL('https://translate.googleapis.com/translate_a/single');
    url.search=new URLSearchParams({client:'gtx',sl:source,tl:'ckb',dt:'t'}).toString();
-   let res:Response;
-   try { res=await fetch(url,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams({q:text}),signal}); }
-   catch(error) {
+   let data:unknown;
+   try {
+    if (signal.aborted) throw new DOMException('Cancelled','AbortError');
+    if (Capacitor.isNativePlatform()) {
+     // Native HTTP is not subject to WebView CORS. Never send the optional API key here.
+     const res=await CapacitorHttp.post({url:url.toString(),headers:{'Content-Type':'application/x-www-form-urlencoded'},data:new URLSearchParams({q:text}).toString(),connectTimeout:15000,readTimeout:20000,responseType:'json'});
+     if (signal.aborted) throw new DOMException('Cancelled','AbortError');
+     if(res.status<200||res.status>=300) throw new Error(`Google (${res.status}): وەرگێڕان سەرنەکەوت.`);
+     data=res.data;
+    } else {
+     const res=await fetch(url,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams({q:text}),signal});
+     if(!res.ok) throw new Error(`Google (${res.status}): وەرگێڕان سەرنەکەوت.`);
+     data=await res.json();
+    }
+   } catch(error) {
     if(signal.aborted) throw error;
-    const unavailable=new Error('پەیوەندی بە وەرگێڕی خۆڕایی نەکرا. لەوانەیە Google یان وێبگەڕەکەت ڕێگری کردبێت؛ دواتر هەوڵبدەرەوە.'); unavailable.name='ProviderUnavailable'; throw unavailable;
+    if(error instanceof Error && /^Google \(\d+\)/.test(error.message)) throw error;
+    const unavailable=new Error('پەیوەندی بە وەرگێڕی خۆڕایی نەکرا. لەوانەیە Google داواکارییەکەی ڕاگرتبێت؛ دواتر هەوڵبدەرەوە.'); unavailable.name='ProviderUnavailable'; throw unavailable;
    }
-   if(!res.ok) throw new Error(`Google (${res.status}): وەرگێڕان سەرنەکەوت.`);
-   const data:unknown=await res.json();
    if(!Array.isArray(data)||!Array.isArray(data[0])) throw new Error('وەڵامی Google نادروستە.');
    const translated=(data[0] as unknown[]).map(part=>Array.isArray(part)&&typeof part[0]==='string'?part[0]:'').join('');
    if(text.trim() && !translated.trim()) throw new Error('وەڵامی Google بەتاڵە.');
