@@ -40,3 +40,32 @@ export async function videoToWav(file:File):Promise<{audio:Blob;duration:number}
  let peak=0;for(let i=0;i<data.length;i++){const v=Math.max(-1,Math.min(1,data[i]));peak=Math.max(peak,Math.abs(v));view.setInt16(44+i*2,v<0?v*32768:v*32767,true);}if(peak<0.00001)throw new Error('دەنگ لە ڤیدیۆکەدا نەدۆزرایەوە.');
  return {audio:new Blob([bytes],{type:'audio/wav'}),duration:buffer.duration};
 }
+
+export interface CaptionChunk {audio:Blob;silent:boolean}
+export interface CaptionResult {text?:string;words?:unknown}
+export interface CaptionProgress {next:number;words:TimedWord[];warnings:number}
+/** Completed chunks can be retried in memory without sending them or charging again. */
+export async function transcribeChunks(duration:number,progress:CaptionProgress,extract:(start:number,end:number)=>Promise<CaptionChunk>,transcribe:(audio:Blob)=>Promise<CaptionResult>,update:(done:number,total:number)=>void):Promise<CaptionProgress> {
+ const size=120,total=Math.ceil(duration/size);
+ for(let index=progress.next;index<total;index++){
+  update(index,total);const start=index*size,end=Math.min(duration,start+size);const chunk=await extract(start,end);
+  if(!chunk.silent){
+   const result=await transcribe(chunk.audio);const text=result.text||'';
+   if(!Array.isArray(result.words)||!result.words.length){if(text.trim())throw new Error('دەقی ئەم بەشە کاتی وشەی نییە؛ هیچ ژێرنووسێکی تەواو دروست نەکرا.');}
+   else {
+    const local=wordsToSubtitle(result.words,end-start);
+    const full=text.replace(/[^\p{L}\p{N}]/gu,'').toLowerCase(),timed=local.cues.map(c=>c.text).join('').replace(/[^\p{L}\p{N}]/gu,'').toLowerCase();
+    if(full && timed.length<full.length*0.9)progress.warnings++;
+    for(const value of result.words as TimedWord[])progress.words.push({text:value.text,start:value.start+start,end:Math.min(value.end,end-start)+start});
+   }
+  }
+  progress.next=index+1;
+ }
+ update(total,total);return progress;
+}
+/** Slice a generated mono PCM WAV on exact sample boundaries without decoding the video again. */
+export async function sliceWav(audio:Blob,start:number,end:number):Promise<Blob> {
+ const rate=16000, first=Math.round(start*rate)*2,last=Math.round(end*rate)*2;
+ const header=await audio.slice(0,44).arrayBuffer();const view=new DataView(header);const length=last-first;view.setUint32(4,36+length,true);view.setUint32(40,length,true);
+ return new Blob([header,audio.slice(44+first,44+last)],{type:'audio/wav'});
+}

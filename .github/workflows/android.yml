@@ -59,6 +59,10 @@ jobs:
           name: rizhnus-signed-apk
           path: android/app/build/outputs/apk/release/app-release.apk
           if-no-files-found: error
+      - name: Generate synthetic audio test fixture
+        run: |
+          mkdir -p android/app/src/androidTest/assets
+          ffmpeg -hide_banner -loglevel error -f lavfi -i 'sine=frequency=440:sample_rate=44100:duration=125' -c:a aac -b:a 48k android/app/src/androidTest/assets/fixture.m4a
       - name: Build emulator test packages
         working-directory: android
         run: |
@@ -108,5 +112,5 @@ jobs:
             adb uninstall com.rizhnus.subtitle
             adb install test-apks/debug/app-debug.apk
             adb install test-apks/androidTest/debug/app-debug-androidTest.apk
-            adb shell am instrument -w -e class com.rizhnus.subtitle.BackgroundServiceTest,com.rizhnus.subtitle.UiLayoutTest com.rizhnus.subtitle.test/androidx.test.runner.AndroidJUnitRunner | tee instrumentation.txt
-            grep -q 'OK (3 tests)' instrumentation.txt || (grep -E 'FAILURES|Failure|Error|Exception|Assertion|expected:|Tests run|INSTRUMENTATION_RESULT|Process crashed' instrumentation.txt | head -n 9 | sed 's/^/::error::/'; exit 1)
+            adb shell am instrument -w -e class com.rizhnus.subtitle.BackgroundServiceTest,com.rizhnus.subtitle.UiLayoutTest,com.rizhnus.subtitle.AudioChunksTest com.rizhnus.subtitle.test/androidx.test.runner.AndroidJUnitRunner | tee instrumentation.txt
+            grep -q 'OK (4 tests)' instrumentation.txt || (adb logcat -d -s AndroidRuntime:E chromium:E | tail -n 80; grep -E 'FAILURES|Failure|Error|Exception|Assertion|expected:|Tests run|INSTRUMENTATION_RESULT|Process crashed' instrumentation.txt | head -n 9 | sed 's/^/::error::/'; exit 1)
