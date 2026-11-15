@@ -12,3 +12,4 @@ Dependencies and their licenses are available in package-lock.json and the respe
 - Google website translation widget protocol: independently implemented based on public discussion https://github.com/ssut/py-googletrans/issues/268 and rockbenben/subtitle-translator; the embedded widget key is public, not a user credential.
 
 - Anthropic frontend-design and webapp-testing skills: https://github.com/anthropics/skills — design and testing guidance reviewed; no skill source code copied.
+- Puter.js, Apache-2.0: https://github.com/HeyPuter/puter — online speech-to-text SDK; Gemini receives audio via Puter. The postal-mime dependency is overridden to a patched release.
