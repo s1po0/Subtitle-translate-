@@ -52,8 +52,8 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          cp android/app/build/outputs/apk/release/app-release.apk Rizhnus-2.1.apk
-          gh release create "apk-${{ github.run_id }}" Rizhnus-2.1.apk --target "${{ github.sha }}" --title "Rizhnus 2.1 APK" --notes "Signed Android APK." --latest=false
+          cp android/app/build/outputs/apk/release/app-release.apk Rizhnus-2.2.apk
+          gh release create "apk-${{ github.run_id }}" Rizhnus-2.2.apk --target "${{ github.sha }}" --title "Rizhnus 2.2 APK" --notes "Signed Android APK." --latest=false
       - uses: actions/upload-artifact@v4
         with:
           name: rizhnus-signed-apk
@@ -109,4 +109,4 @@ jobs:
             adb install test-apks/debug/app-debug.apk
             adb install test-apks/androidTest/debug/app-debug-androidTest.apk
             adb shell am instrument -w -e class com.rizhnus.subtitle.BackgroundServiceTest,com.rizhnus.subtitle.UiLayoutTest com.rizhnus.subtitle.test/androidx.test.runner.AndroidJUnitRunner | tee instrumentation.txt
-            grep -q 'OK (2 tests)' instrumentation.txt || (grep -E 'FAILURES|Failure|Error|Exception|Assertion|expected:|Tests run|INSTRUMENTATION_RESULT|Process crashed' instrumentation.txt | head -n 9 | sed 's/^/::error::/'; exit 1)
+            grep -q 'OK (3 tests)' instrumentation.txt || (grep -E 'FAILURES|Failure|Error|Exception|Assertion|expected:|Tests run|INSTRUMENTATION_RESULT|Process crashed' instrumentation.txt | head -n 9 | sed 's/^/::error::/'; exit 1)

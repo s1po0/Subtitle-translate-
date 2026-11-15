@@ -34,4 +34,30 @@ public class UiLayoutTest {
             assertEquals("Long file names must not overflow the phone screen", "\"ok\"", value);
         }
     }
+    private String javascript(ActivityScenario<MainActivity> activity, String script) throws Exception {
+        CountDownLatch latch = new CountDownLatch(1);
+        AtomicReference<String> result = new AtomicReference<>();
+        activity.onActivity(a -> a.getBridge().getWebView().evaluateJavascript(script, value -> { result.set(value); latch.countDown(); }));
+        assertTrue("WebView did not respond", latch.await(10, TimeUnit.SECONDS));
+        return result.get();
+    }
+
+    @Test public void languageChoiceUsesReadableInAppDialog() throws Exception {
+        try (ActivityScenario<MainActivity> activity = ActivityScenario.launch(MainActivity.class)) {
+            String ready = "";
+            for (int i=0; i<20; i++) {
+                Thread.sleep(1500);
+                ready = javascript(activity, "(function(){var b=document.querySelector('.language-box .choice-trigger');if(!b)return 'not-loaded';b.click();return 'opened';})()");
+                if (ready.contains("opened")) break;
+            }
+            assertEquals("Language picker should open", "\"opened\"", ready);
+            Thread.sleep(1000);
+            String result = javascript(activity, "(function(){var d=document.querySelector('.choice-dialog');var items=document.querySelectorAll('.choice-option');if(!d||items.length<2)return 'missing-dialog';var r=d.getBoundingClientRect();if(r.width>innerWidth||r.height>innerHeight)return 'overflow';var color=getComputedStyle(d).backgroundColor;if(color==='rgba(0, 0, 0, 0)'||color==='rgb(255, 255, 255)')return 'unexpected-background:'+color;items[1].click();return 'selected';})()");
+            assertEquals("Picker should be visible and selectable on dark theme", "\"selected\"", result);
+            Thread.sleep(500);
+            result = javascript(activity, "(function(){var b=document.querySelector('.language-box .choice-trigger');return b && b.textContent.indexOf('ئینگلیزی')>=0 && !document.querySelector('.choice-dialog')?'ok':'wrong-selection';})()");
+            assertEquals("Selection should update and close the picker", "\"ok\"", result);
+        }
+    }
+
 }
