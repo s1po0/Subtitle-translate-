@@ -97,4 +97,7 @@ jobs:
             adb install test-apks/debug/app-debug.apk
             adb install test-apks/androidTest/debug/app-debug-androidTest.apk
             adb shell am instrument -w -e class com.rizhnus.subtitle.BackgroundServiceTest,com.rizhnus.subtitle.UiLayoutTest com.rizhnus.subtitle.test/androidx.test.runner.AndroidJUnitRunner | tee instrumentation.txt
-            grep -q 'OK (2 tests)' instrumentation.txt
+            grep -q 'OK (2 tests)' instrumentation.txt || {
+              grep -E 'FAILURES|Failure|Error|Exception|Assertion|expected:|Tests run|INSTRUMENTATION_RESULT|Process crashed' instrumentation.txt | head -n 9 | while IFS= read -r line; do echo "::error::$line"; done
+              exit 1
+            }
