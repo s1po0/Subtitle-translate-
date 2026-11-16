@@ -52,8 +52,8 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          cp android/app/build/outputs/apk/release/app-release.apk Rizhnus-2.4.apk
-          gh release create "apk-${{ github.run_id }}" Rizhnus-2.4.apk --target "${{ github.sha }}" --title "Rizhnus 2.4 APK" --notes "Signed Android APK. Video captions are experimental; Android login and live transcription are unverified." --latest=false
+          cp android/app/build/outputs/apk/release/app-release.apk Rizhnus-2.5.apk
+          gh release create "apk-${{ github.run_id }}" Rizhnus-2.5.apk --target "${{ github.sha }}" --title "Rizhnus 2.5 APK" --notes "Signed Android APK. Video captions support up to 30 minutes on Android. Puter sign-in and live transcription require external service and may incur costs." --latest=false
       - uses: actions/upload-artifact@v4
         with:
           name: rizhnus-signed-apk
