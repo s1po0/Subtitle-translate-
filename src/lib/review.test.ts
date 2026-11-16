@@ -12,3 +12,7 @@ describe('export and review safety',()=>{
  });
  it('counts failed and complete rows',()=>{expect(fileSummary([cue,cue],[{text:'سڵاو',status:'done'},{text:'',status:'failed'}])).toEqual({complete:1,failed:1,total:2});});
 });
+it('flags unusually short or long display durations without altering timing',()=>{
+ expect(reviewHints({...cue,end:'00:00:01,500'},{text:'سڵاو',status:'done'}).short).toBe(true);
+ expect(reviewHints({...cue,end:'00:00:09,000'},{text:'سڵاو',status:'done'}).long).toBe(true);
+});

@@ -44,22 +44,29 @@ export async function videoToWav(file:File):Promise<{audio:Blob;duration:number}
 export interface CaptionChunk {audio:Blob;silent:boolean}
 export interface CaptionResult {text?:string;words?:unknown}
 export interface CaptionProgress {next:number;words:TimedWord[];warnings:number}
-/** Completed chunks can be retried in memory without sending them or charging again. */
-export async function transcribeChunks(duration:number,progress:CaptionProgress,extract:(start:number,end:number)=>Promise<CaptionChunk>,transcribe:(audio:Blob)=>Promise<CaptionResult>,update:(done:number,total:number)=>void):Promise<CaptionProgress> {
- const size=120,total=Math.ceil(duration/size);
+/** Each core has two seconds of acoustic context at both edges (120s maximum).
+ * Words are owned by the core containing their midpoint; near-edge words remain review candidates. */
+export async function transcribeChunks(duration:number,progress:CaptionProgress,extract:(start:number,end:number)=>Promise<CaptionChunk>,transcribe:(audio:Blob)=>Promise<CaptionResult>,update:(done:number,total:number)=>void,checkpoint?:(progress:CaptionProgress)=>Promise<void>):Promise<CaptionProgress> {
+ const size=116,overlap=2,total=Math.ceil(duration/size);
  for(let index=progress.next;index<total;index++){
-  update(index,total);const start=index*size,end=Math.min(duration,start+size);const chunk=await extract(start,end);
+  update(index,total);const coreStart=index*size,coreEnd=Math.min(duration,coreStart+size),start=Math.max(0,coreStart-overlap),end=Math.min(duration,coreEnd+overlap);const chunk=await extract(start,end);
+  let additions:TimedWord[]=[];let warnings=0;
   if(!chunk.silent){
    const result=await transcribe(chunk.audio);const text=result.text||'';
-   if(!Array.isArray(result.words)||!result.words.length){if(text.trim())throw new Error('دەقی ئەم بەشە کاتی وشەی نییە؛ هیچ ژێرنووسێکی تەواو دروست نەکرا.');progress.warnings++;}
+   if(!Array.isArray(result.words)||!result.words.length){if(text.trim())throw new Error('دەقی ئەم بەشە کاتی وشەی نییە؛ هیچ ژێرنووسێکی تەواو دروست نەکرا.');warnings++;}
    else {
     const local=wordsToSubtitle(result.words,end-start);
     const full=text.replace(/[^\p{L}\p{N}]/gu,'').toLowerCase(),timed=local.cues.map(c=>c.text).join('').replace(/[^\p{L}\p{N}]/gu,'').toLowerCase();
-    if(full && timed.length<full.length*0.9)progress.warnings++;
-    for(const value of result.words as TimedWord[])progress.words.push({text:value.text,start:value.start+start,end:Math.min(value.end,end-start)+start});
+    if(full && timed.length<full.length*0.9)warnings++;
+    additions=(result.words as TimedWord[]).map(value=>({text:value.text.trim(),start:value.start+start,end:Math.min(value.end,end-start)+start})).filter(word=>{const midpoint=(word.start+word.end)/2;return midpoint>=coreStart&&(index===total-1?midpoint<=coreEnd:midpoint<coreEnd);});
+    // Only remove a seam duplicate when identical text also overlaps in time.
+    const previous=progress.words[progress.words.length-1],first=additions[0];
+    const normalize=(s:string)=>s.toLowerCase().replace(/[^\p{L}\p{N}]/gu,'');
+    if(previous&&first&&previous.end>first.start&&normalize(previous.text)&&normalize(previous.text)===normalize(first.text)&&Math.abs(previous.start-first.start)<0.5)additions.shift();
    }
   }
-  progress.next=index+1;
+  progress.words.push(...additions);progress.warnings+=warnings;progress.next=index+1;
+  if(checkpoint)await checkpoint(progress);
  }
  update(total,total);return progress;
 }

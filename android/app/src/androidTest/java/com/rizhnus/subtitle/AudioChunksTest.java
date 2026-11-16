@@ -22,6 +22,8 @@ public class AudioChunksTest {
             byte[] b=new byte[8192];int n;while((n=input.read(b))!=-1)output.write(b,0,n);
         }
         try {
+            String hash=VideoFingerprint.sha256(context,Uri.fromFile(fixture));
+            assertEquals(64,hash.length());assertEquals(hash,VideoFingerprint.sha256(context,Uri.fromFile(fixture)));
             AudioChunks.Result before=AudioChunks.decode(context,Uri.fromFile(fixture),118,120);
             AudioChunks.Result after=AudioChunks.decode(context,Uri.fromFile(fixture),120,122);
             AudioChunks.Result last=AudioChunks.decode(context,Uri.fromFile(fixture),1798,1800);

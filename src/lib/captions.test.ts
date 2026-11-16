@@ -8,10 +8,10 @@ describe('timed caption generation',()=>{
 
 describe('chunked transcription',()=>{
  it('preserves offsets, skips silence, and retries without resending completed chunks',async()=>{
-  const {transcribeChunks}=await import('./captions');const progress={next:0,words:[],warnings:0};const extract=vi.fn(async(start:number)=>({audio:new Blob([String(start)]),silent:start===240}));let requests=0;
-  const transcribe=vi.fn(async()=>{requests++;if(requests===2)throw Error('network');return {text:'hi',words:[{text:'hi',start:1,end:2}]};});
+  const {transcribeChunks}=await import('./captions');const progress={next:0,words:[],warnings:0};const extract=vi.fn(async(start:number)=>({audio:new Blob([String(start)]),silent:start===230}));let requests=0;
+  const transcribe=vi.fn(async()=>{requests++;if(requests===2)throw Error('network');return {text:'hi',words:[{text:'hi',start:3,end:4}]};});
   await expect(transcribeChunks(300,progress,extract,transcribe,()=>{})).rejects.toThrow('network');expect(progress.next).toBe(1);
-  await transcribeChunks(300,progress,extract,transcribe,()=>{});expect(progress.next).toBe(3);expect(progress.words).toEqual([{text:'hi',start:1,end:2},{text:'hi',start:121,end:122}]);expect(extract.mock.calls.map(c=>c[0])).toEqual([0,120,120,240]);expect(transcribe).toHaveBeenCalledTimes(3);
+  await transcribeChunks(300,progress,extract,transcribe,()=>{});expect(progress.next).toBe(3);expect(progress.words).toEqual([{text:'hi',start:3,end:4},{text:'hi',start:117,end:118}]);expect(extract.mock.calls.map(c=>c[0])).toEqual([0,114,114,230]);expect(transcribe).toHaveBeenCalledTimes(3);
  });
  it('rejects a transcript without valid timing',async()=>{const {transcribeChunks}=await import('./captions');const p={next:0,words:[],warnings:0};await expect(transcribeChunks(20,p,async()=>({audio:new Blob(),silent:false}),async()=>({text:'hello',words:[]}),()=>{})).rejects.toThrow();expect(p.next).toBe(0);});
 });
@@ -22,6 +22,12 @@ describe('WAV chunking',()=>{
 
 it('processes 30 minutes with correct offsets using bounded two-minute chunks',async()=>{
  const {transcribeChunks}=await import('./captions');const progress={next:0,words:[],warnings:0};const extract=vi.fn(async()=>({audio:new Blob(),silent:false}));
- await transcribeChunks(1800,progress,extract,async()=>({text:'test',words:[{text:'test',start:1,end:2}]}),()=>{});
- expect(extract).toHaveBeenCalledTimes(15);expect(progress.words[14]).toEqual({text:'test',start:1681,end:1682});expect(progress.next).toBe(15);
+ await transcribeChunks(1800,progress,extract,async()=>({text:'test',words:[{text:'test',start:3,end:4}]}),()=>{});
+ expect(extract).toHaveBeenCalledTimes(16);expect(progress.words[15]).toEqual({text:'test',start:1741,end:1742});expect(progress.next).toBe(16);
 });
+
+ it('keeps a boundary word once using overlapping context and checkpoints completed chunks',async()=>{
+  const {transcribeChunks}=await import('./captions');const p={next:0,words:[],warnings:0};let count=0;const saved:number[]=[];
+  await transcribeChunks(150,p,async()=>({audio:new Blob(),silent:false}),async()=>{count++;return count===1?{text:'before crossing',words:[{text:'before',start:114,end:115},{text:'crossing',start:115.7,end:116.3}]}:{text:'crossing after',words:[{text:'crossing',start:1.7,end:2.3},{text:'after',start:2.5,end:3}]};},()=>{},async state=>{saved.push(state.next);});
+  expect(p.words.map((w:{text:string})=>w.text)).toEqual(['before','crossing','after']);expect(saved).toEqual([1,2]);
+ });

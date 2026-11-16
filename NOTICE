@@ -13,3 +13,4 @@ Dependencies and their licenses are available in package-lock.json and the respe
 
 - Anthropic frontend-design and webapp-testing skills: https://github.com/anthropics/skills — design and testing guidance reviewed; no skill source code copied.
 - Puter.js, Apache-2.0: https://github.com/HeyPuter/puter — online speech-to-text SDK; Gemini receives audio via Puter. The postal-mime dependency is overridden to a patched release.
+- Long-form transcription design guidance: https://dev.to/hanna_altunina/how-to-build-a-reliable-long-form-transcription-pipeline-59l0 — boundary overlap and checkpointing considered; no code copied.

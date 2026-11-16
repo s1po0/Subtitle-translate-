@@ -31,6 +31,9 @@ public final class VideoAudioPlugin extends Plugin {
         if (call == null) return;
         if (result.getResultCode()!=Activity.RESULT_OK || result.getData()==null || result.getData().getData()==null) {call.reject("فایل هەڵنەبژێردرا.");return;}
         Uri uri=result.getData().getData();
+        new Thread(() -> inspectVideo(call,uri), "video-fingerprint").start();
+    }
+    private void inspectVideo(PluginCall call, Uri uri) {
         MediaExtractor extractor=new MediaExtractor();
         try {
             extractor.setDataSource(getContext(),uri,null);
@@ -42,8 +45,9 @@ public final class VideoAudioPlugin extends Plugin {
             if (length<=0 || length>1801) throw new IllegalArgumentException("درێژی دەنگ دەبێت تا ٣٠ خولەک بێت و پێویستە کاتی دەنگ دیار بێت.");
             String name="video";
             try(Cursor cursor=getContext().getContentResolver().query(uri,new String[]{OpenableColumns.DISPLAY_NAME},null,null,null)) {if(cursor!=null&&cursor.moveToFirst()&&!cursor.isNull(0))name=cursor.getString(0);}
+            String fingerprint=VideoFingerprint.sha256(getContext(),uri);
             selected=uri;duration=length;
-            JSObject response=new JSObject();response.put("name",name);response.put("duration",duration);call.resolve(response);
+            JSObject response=new JSObject();response.put("name",name);response.put("duration",duration);response.put("fingerprint",fingerprint);call.resolve(response);
         } catch(Exception e) {call.reject("ڤیدیۆ نەخوێندرایەوە یان دەنگی پشتیوانیکراوی تا ٣٠ خولەکی نییە.",e);}
         finally {extractor.release();}
     }

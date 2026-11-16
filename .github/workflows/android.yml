@@ -47,13 +47,6 @@ jobs:
       - name: Live multi-file benchmark
         continue-on-error: true
         run: node scripts/google-multifile-smoke.mjs
-      - name: Publish direct APK download
-        if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[publish-apk]')
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          cp android/app/build/outputs/apk/release/app-release.apk Rizhnus-2.5.apk
-          gh release create "apk-${{ github.run_id }}" Rizhnus-2.5.apk --target "${{ github.sha }}" --title "Rizhnus 2.5 APK" --notes "Signed Android APK. Video captions support up to 30 minutes on Android. Puter sign-in and live transcription require external service and may incur costs." --latest=false
       - uses: actions/upload-artifact@v4
         with:
           name: rizhnus-signed-apk
@@ -116,3 +109,19 @@ jobs:
             adb install test-apks/androidTest/debug/app-debug-androidTest.apk
             adb shell am instrument -w -e class com.rizhnus.subtitle.BackgroundServiceTest,com.rizhnus.subtitle.UiLayoutTest,com.rizhnus.subtitle.AudioChunksTest com.rizhnus.subtitle.test/androidx.test.runner.AndroidJUnitRunner | tee instrumentation.txt
             grep -q 'OK (5 tests)' instrumentation.txt || (adb logcat -d -s AndroidRuntime:E chromium:E | tail -n 80; grep -E 'FAILURES|Failure|Error|Exception|Assertion|expected:|Tests run|INSTRUMENTATION_RESULT|Process crashed' instrumentation.txt | head -n 9 | sed 's/^/::error::/'; exit 1)
+
+  publish:
+    needs: [build, emulator-smoke]
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[publish-apk]')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: rizhnus-signed-apk
+          path: apk
+      - name: Publish tested direct APK
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cp apk/app-release.apk Rizhnus-2.6.apk
+          gh release create "apk-${{ github.run_id }}" Rizhnus-2.6.apk --repo "${{ github.repository }}" --target "${{ github.sha }}" --title "Rizhnus 2.6 APK" --notes "Signed Android APK. Video transcription remains experimental; Puter sign-in and service availability vary and usage may incur costs." --latest=false
