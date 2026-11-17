@@ -11,11 +11,26 @@ export function restore(output:string, tokens:string[]):string {
  for (let i=0;i<tokens.length;i++) { const re=new RegExp(`ZXQ\\s*${i}\\s*QXZ`,'gi'); if (!re.test(text)) throw new Error('پاراستنی نیشانەکانی ژێرنووس سەرکەوتوو نەبوو.'); text=text.replace(re,()=>tokens[i]); }
  return text;
 }
+export function rtlPreference(saved:{rtl?:unknown;rtlFixVersion?:unknown}):boolean {return saved.rtlFixVersion===1&&typeof saved.rtl==='boolean'?saved.rtl:true;}
 export interface TextOptions { digits:boolean; rtl:boolean; wrap:boolean; replacements:string }
 export function normalize(text:string, options:TextOptions):string {
  let s=text.replace(/[يى]/g,'ی').replace(/ك/g,'ک');
  for (const line of options.replacements.split('\n')) {const at=line.indexOf('='); if(at>0) s=s.split(line.slice(0,at).trim()).join(line.slice(at+1).trim());}
  if(options.digits) s=s.replace(/[0-9]/g,c=>'٠١٢٣٤٥٦٧٨٩'[Number(c)]);
  if(options.wrap && !/<[^>]+>|\{\\/.test(s)) { const words=s.replace(/\\N|\n/g,' ').split(/\s+/); let first='',second=''; for(const w of words) {if(!second && (first+' '+w).trim().length<=42) first=(first+' '+w).trim(); else second=(second+' '+w).trim();} s=first+(second?'\n'+second:''); }
- if(options.rtl) s='\u200F'+s.replace(/\n/g,'\n\u200F'); return s;
+ if(options.rtl) s=markRtlLines(s); return s;
+}
+
+/** Directional hints are added only to exported translated text, never by reversing characters.
+ * A bounded RTL embedding also fixes neutral punctuation when a player uses LTR paragraph direction.
+ * ASS override blocks must remain first, and ASS \N/\n line breaks must remain intact. */
+export function markRtlLines(text:string):string {
+ const RLE='\u202B',RLM='\u200F',PDF='\u202C';
+ return text.split(/(\r\n|\n|\\[Nn])/).map((line,index)=>{
+  if(index%2===1||!line.trim())return line;
+  const prefix=line.match(/^(?:\{\\[^}]*\})*/)?.[0]||'';
+  const content=line.slice(prefix.length);
+  if(!content.trim()||(content.startsWith(RLE)&&content.endsWith(PDF)))return line;
+  return prefix+RLE+RLM+content+RLM+PDF;
+ }).join('');
 }
