@@ -33,3 +33,6 @@ Sources: https://docs.puter.com/AI/speech2txt/ documents a 10 MiB limit, word ti
 
 ### RTL punctuation in exported subtitles
 RTL direction hints are enabled by default, including for settings saved by versions before 2.7. Each nonempty translated text line is wrapped with balanced Unicode RLE/PDF and RLM hints; this retains logical text order and helps punctuation display correctly in both LTR- and RTL-based players. ASS override tags, ASS line breaks, subtitle timing and untranslated fallback lines remain untouched. Unicode bidi rendering and Arabic-script shaping depend on the player and font; no marker can fix players that lack RTL support. If a player displays marks badly, disable «ڕاستکردنەوەی خاڵ و ئاراستە» in settings and export again. Existing user-supplied directional controls are not stripped.
+
+### Square brackets
+Square-bracket delimiters are protected, but words inside them are sent for translation, including descriptions such as `[music]`. Tags, music symbols and explicitly protected glossary terms remain protected. Invalid or reordered bracket markers fail rather than being silently dropped. Existing completed files can be retranslated using the per-file retry button; edited rows are preserved. Translation quality and the placement of the words inside brackets still require review.

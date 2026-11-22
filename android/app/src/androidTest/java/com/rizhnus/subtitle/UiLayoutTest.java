@@ -81,4 +81,16 @@ public class UiLayoutTest {
         }
     }
 
+    @Test public void videoPanelAndControlsFollowBothThemesOnMobile() throws Exception {
+        try (ActivityScenario<MainActivity> activity = ActivityScenario.launch(MainActivity.class)) {
+            String ready="";
+            for(int i=0;i<20;i++){Thread.sleep(1000);ready=javascript(activity,"(function(){return document.querySelector('.caption-panel')?'ok':'wait'})()");if(ready.contains("ok"))break;}
+            assertEquals("Workspace should load", "\"ok\"", ready);
+            String script="(function(){var p=document.querySelector('.caption-panel'),m=document.querySelector('.main-panel'),b=p.querySelector('.clear-files');p.open=true;var r=p.getBoundingClientRect(),c=getComputedStyle(p).backgroundColor,mc=getComputedStyle(m).backgroundColor,bc=getComputedStyle(b).backgroundColor;if(c!==mc)return 'wrong-surface:'+c+':'+mc;if(bc==='rgb(255, 255, 255)'||bc==='rgba(0, 0, 0, 0)')return 'wrong-button:'+bc;if(r.left < -1||r.right>innerWidth+1||document.documentElement.scrollWidth>innerWidth+1)return 'overflow';return 'ok'})()";
+            assertEquals("Video panel must match the current theme", "\"ok\"", javascript(activity,script));
+            javascript(activity,"document.querySelector('.icon-button').click() ");Thread.sleep(500);
+            assertEquals("Video panel must also match the other theme", "\"ok\"", javascript(activity,script));
+        }
+    }
+
 }

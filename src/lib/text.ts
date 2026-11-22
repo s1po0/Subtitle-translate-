@@ -2,13 +2,17 @@ const escape = (s:string) => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replac
 export interface Protected { html:string; tokens:string[] }
 export function protect(text:string, glossary:string[]=[]):Protected {
  const escaped=glossary.filter(Boolean).sort((a,b)=>b.length-a.length).map(s=>s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'));
- const pattern=new RegExp(`<[^>]+>|\\{\\\\[^}]*\\}|\\\\[Nnh]|\\[[^\\]\\n]+\\]|♪|(^|\\n)[ \\t]*[-–—](?=\\s)|${escaped.length?escaped.join('|'):'(?!)'}`,'gim');
+ const pattern=new RegExp(`<[^>]+>|\\{\\\\[^}]*\\}|\\\\[Nnh]|\\[|\\]|♪|(^|\\n)[ \\t]*[-–—](?=\\s)|${escaped.length?escaped.join('|'):'(?!)'}`,'gim');
  const tokens:string[]=[]; let last=0, html=''; for (const m of text.matchAll(pattern)) { const at=m.index; html+=escape(text.slice(last,at)); const n=tokens.push(m[0])-1; html+=`<span class="notranslate">ZXQ${n}QXZ</span>`; last=at+m[0].length; } html+=escape(text.slice(last)); return {html:html.replace(/\n/g,'<br>'),tokens};
 }
 export function restore(output:string, tokens:string[]):string {
  // Parse in an inert document: no translated HTML is ever inserted into the UI.
  const doc=new DOMParser().parseFromString(output.replace(/<br\s*\/?\s*>/gi,'\n'), 'text/html'); let text=doc.body.textContent||'';
- for (let i=0;i<tokens.length;i++) { const re=new RegExp(`ZXQ\\s*${i}\\s*QXZ`,'gi'); if (!re.test(text)) throw new Error('پاراستنی نیشانەکانی ژێرنووس سەرکەوتوو نەبوو.'); text=text.replace(re,()=>tokens[i]); }
+ const positions:number[]=[];
+ for (let i=0;i<tokens.length;i++) {const re=new RegExp(`ZXQ\\s*${i}\\s*QXZ`,'gi');const matches=[...text.matchAll(re)];if(matches.length!==1)throw new Error('پاراستنی نیشانەکانی ژێرنووس سەرکەوتوو نەبوو.');positions[i]=matches[0].index!;}
+ const stack:number[]=[];
+ for(let i=0;i<tokens.length;i++){if(tokens[i]==='[')stack.push(i);else if(tokens[i]===']'&&stack.length){const open=stack.pop()!;if(positions[open]>positions[i])throw new Error('ڕیزبەندی کەوانەکان لە وەرگێڕاندا تێکچووە.');}}
+ for (let i=0;i<tokens.length;i++) {const re=new RegExp(`ZXQ\\s*${i}\\s*QXZ`,'gi');text=text.replace(re,()=>tokens[i]);}
  return text;
 }
 export function rtlPreference(saved:{rtl?:unknown;rtlFixVersion?:unknown}):boolean {return saved.rtlFixVersion===1&&typeof saved.rtl==='boolean'?saved.rtl:true;}

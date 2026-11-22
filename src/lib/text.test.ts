@@ -28,3 +28,18 @@ describe('right-to-left export',()=>{
 it('enables RTL for new and previously saved settings, while respecting the new opt-out',()=>{
  expect(rtlPreference({})).toBe(true);expect(rtlPreference({rtl:false})).toBe(true);expect(rtlPreference({rtl:false,rtlFixVersion:1})).toBe(false);expect(rtlPreference({rtl:true,rtlFixVersion:1})).toBe(true);
 });
+
+describe('translating text in square brackets',()=>{
+ it('sends contents for translation while preserving brackets, tags, music and glossary',()=>{
+  const p=protect('- <i>[John is singing ♪]</i> [music]', ['John']);
+  expect(p.html).toContain('is singing');expect(p.html).toContain('music');expect(p.tokens).toContain('[');expect(p.tokens).toContain(']');expect(p.tokens).not.toContain('[music]');
+  const translated=p.html.replace('is singing','گۆرانی دەڵێت').replace('music','مۆسیقا');
+  expect(restore(translated,p.tokens)).toBe('- <i>[John گۆرانی دەڵێت ♪]</i> [مۆسیقا]');
+ });
+ it('handles nested, repeated, empty and unmatched brackets',()=>{
+  for(const source of ['[Hello [world]] [music]','[] hi [','] hello']){const p=protect(source);expect(restore(p.html,p.tokens)).toBe(source);}
+ });
+ it('rejects reversed, missing or duplicated protected brackets',()=>{
+  const p=protect('[hello]');expect(()=>restore('ZXQ1QXZ سڵاو ZXQ0QXZ',p.tokens)).toThrow();expect(()=>restore('ZXQ0QXZ سڵاو',p.tokens)).toThrow();expect(()=>restore('ZXQ0QXZ ZXQ0QXZ سڵاو ZXQ1QXZ',p.tokens)).toThrow();
+ });
+});

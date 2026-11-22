@@ -31,3 +31,10 @@ describe('multi-file translation queue',()=>{
  });
 
 });
+
+it('translates bracketed speech and sound descriptions without changing timing',async()=>{
+ const doc=parseSubtitle('1\n00:00:01,000 --> 00:00:03,000\n[Music plays]','srt');const f:SessionFile={doc,name:'brackets.srt',encoding:'utf-8',rows:[{text:'',status:'pending'}],output:'srt',detected:''};
+ const provider:TranslationProvider={name:'bracket-v2-mock',translate:async texts=>texts.map(text=>({text:text.replace('Music plays','مۆسیقا دەژەنێت')}))};
+ await translateQueue([f],{provider,source:'en',glossary:[],signal:new AbortController().signal,batchSize:10,onlyFailed:false,onRow:(_f,i,row)=>{f.rows[i]=row;},onProgress:()=>{}});
+ expect(f.rows[0]).toEqual({text:'[مۆسیقا دەژەنێت]',status:'done'});expect([doc.cues[0].start,doc.cues[0].end]).toEqual(['00:00:01,000','00:00:03,000']);
+});
