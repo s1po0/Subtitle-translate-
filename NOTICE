@@ -16,3 +16,5 @@ Dependencies and their licenses are available in package-lock.json and the respe
 - Long-form transcription design guidance: https://dev.to/hanna_altunina/how-to-build-a-reliable-long-form-transcription-pipeline-59l0 — boundary overlap and checkpointing considered; no code copied.
 - bidi-js, MIT: https://github.com/lojjic/bidi-js — test-only Unicode bidirectional algorithm to verify punctuation positioning in LTR and RTL contexts.
 - W3C bidirectional text guidance: https://www.w3.org/International/geo/html-tech/tech-bidi.html — direction-mark research; no code copied.
+
+- Vazirmatn font by Rastikerdar, SIL Open Font License 1.1: https://github.com/rastikerdar/vazirmatn — bundled using @fontsource/vazirmatn for offline display.

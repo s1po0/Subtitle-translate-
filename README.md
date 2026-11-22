@@ -36,3 +36,6 @@ RTL direction hints are enabled by default, including for settings saved by vers
 
 ### Square brackets
 Square-bracket delimiters are protected, but words inside them are sent for translation, including descriptions such as `[music]`. Tags, music symbols and explicitly protected glossary terms remain protected. Invalid or reordered bracket markers fail rather than being silently dropped. Existing completed files can be retranslated using the per-file retry button; edited rows are preserved. Translation quality and the placement of the words inside brackets still require review.
+
+### Startup and appearance
+The Android launcher and splash use the Rizhnus icon and a dark background. The local app bundles its font and has an on-screen retry if the web interface fails to load; this cannot resolve every Android WebView or native startup failure. Updating Android System WebView and reporting the Android version can help diagnose persistent startup problems.
