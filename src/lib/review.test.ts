@@ -16,3 +16,9 @@ it('flags unusually short or long display durations without altering timing',()=
  expect(reviewHints({...cue,end:'00:00:01,500'},{text:'سڵاو',status:'done'}).short).toBe(true);
  expect(reviewHints({...cue,end:'00:00:09,000'},{text:'سڵاو',status:'done'}).long).toBe(true);
 });
+
+it('flags unchanged words inside sound brackets for review',()=>{
+ const cue=parseSubtitle('1\n00:00:01,000 --> 00:00:03,000\n[Music plays]','srt').cues[0];
+ expect(reviewHints(cue,{text:'[Music plays]',status:'done'}).unchanged).toBe(true);
+ expect(reviewHints(cue,{text:'[مۆسیقا دەژەنێت]',status:'done'}).unchanged).toBe(false);
+});

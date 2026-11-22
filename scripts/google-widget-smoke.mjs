@@ -1,6 +1,7 @@
 // Live integration probe with synthetic text only; never sends user files.
 const texts=Array.from({length:32},(_,i)=>`Hello friend number ${i+1}.`);
 texts[0]='Hello <span class="notranslate">ZXQ0QXZ</span> friend.';
+texts[2]='I thought that <span class="notranslate">ZXQ0QXZ</span> you were coming.';
 texts[1]='<span class="notranslate">ZXQ0QXZ</span>Music plays<span class="notranslate">ZXQ1QXZ</span>';
 
 const response=await fetch('https://translate-pa.googleapis.com/v1/translateHtml',{
@@ -15,3 +16,5 @@ const bracket=result[0][1].replace(/<[^>]+>/g,'');const left=bracket.indexOf('ZX
 if(left<0||right<=left||!/[\u0600-\u06ff]/.test(bracket.slice(left+7,right)))throw new Error('Bracketed text did not translate safely');
 if(!result[0].some(x=>/[\u0600-\u06ff]/.test(x)))throw new Error('No Arabic-script output');
 console.log('Google widget live batch: 32 translations returned, ckb script and marker present.');
+
+const joined=result[0][2].replace(/<[^>]+>/g,'');const marker=joined.indexOf('ZXQ0QXZ');console.log('Context boundary probe:',marker>0 && marker+7<joined.length && /[\u0600-\u06ff]/.test(joined.slice(0,marker)) && /[\u0600-\u06ff]/.test(joined.slice(marker+7))?'marker retained with text on both sides':'boundary unusable; app falls back to independent cues');

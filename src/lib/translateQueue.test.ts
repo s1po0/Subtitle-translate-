@@ -38,3 +38,34 @@ it('translates bracketed speech and sound descriptions without changing timing',
  await translateQueue([f],{provider,source:'en',glossary:[],signal:new AbortController().signal,batchSize:10,onlyFailed:false,onRow:(_f,i,row)=>{f.rows[i]=row;},onProgress:()=>{}});
  expect(f.rows[0]).toEqual({text:'[مۆسیقا دەژەنێت]',status:'done'});expect([doc.cues[0].start,doc.cues[0].end]).toEqual(['00:00:01,000','00:00:03,000']);
 });
+
+function contextFixture():SessionFile {
+ const doc=parseSubtitle('1\n00:00:01,000 --> 00:00:02,000\nI thought that\n\n2\n00:00:02,100 --> 00:00:04,000\nyou were coming.','srt');return {doc,name:'context.srt',encoding:'utf-8',rows:doc.cues.map(()=>({text:'',status:'pending'})),output:'srt',detected:''};
+}
+it('groups a continued sentence and restores each cue with original timing',async()=>{
+ const f=contextFixture(),before=f.doc.cues.map(c=>[c.start,c.end]);const translate=vi.fn(async(texts:string[])=>texts.map(text=>({text:text.replace('I thought that','وام زانی').replace('you were coming.','تۆ دێیت.')})));
+ await translateQueue([f],{provider:{name:'context-success',translate},source:'en',glossary:[],signal:new AbortController().signal,batchSize:10,onlyFailed:false,onRow:(_f,i,row)=>{f.rows[i]=row;},onProgress:()=>{}});
+ expect(translate.mock.calls[0][0]).toHaveLength(1);expect(f.rows.map(r=>r.text)).toEqual(['وام زانی','تۆ دێیت.']);expect(f.doc.cues.map(c=>[c.start,c.end])).toEqual(before);
+});
+it('falls back to separate translation when the boundary is lost',async()=>{
+ const f=contextFixture();const translate=vi.fn(async(texts:string[])=>texts.map(text=>({text:text.includes('ZXQ0QXZ')?'marker missing':text.replace('I thought that','وام زانی').replace('you were coming.','تۆ دێیت.')})));
+ await translateQueue([f],{provider:{name:'context-fallback',translate},source:'en',glossary:[],signal:new AbortController().signal,batchSize:10,onlyFailed:false,onRow:(_f,i,row)=>{f.rows[i]=row;},onProgress:()=>{}});
+ expect(translate).toHaveBeenCalledTimes(3);expect(f.rows.map(r=>r.text)).toEqual(['وام زانی','تۆ دێیت.']);
+});
+it('does not join across edited cues or when disabled',async()=>{
+ const f=contextFixture();f.rows[1]={text:'دەستکاری',status:'edited'};const translate=vi.fn(async(texts:string[])=>texts.map(text=>({text})));
+ await translateQueue([f],{provider:{name:'context-edit',translate},source:'en',glossary:[],signal:new AbortController().signal,batchSize:10,onlyFailed:false,retranslate:true,onRow:(_f,i,row)=>{f.rows[i]=row;},onProgress:()=>{}});
+ expect(translate.mock.calls[0][0][0]).not.toContain('ZXQ');expect(f.rows[1].text).toBe('دەستکاری');
+ const g=contextFixture();await translateQueue([g],{provider:{name:'context-disabled',translate},source:'en',glossary:[],signal:new AbortController().signal,batchSize:10,onlyFailed:false,context:false,onRow:(_f,i,row)=>{g.rows[i]=row;},onProgress:()=>{}});expect(translate.mock.calls[1][0]).toHaveLength(2);
+});
+
+it('propagates rate limiting on a contextual pair without further requests',async()=>{
+ const f=contextFixture();const failure=new Error('limit');failure.name='ProviderUnavailable';const translate=vi.fn(async()=>{throw failure;});
+ await expect(translateQueue([f],{provider:{name:'context-limit',translate},source:'en',glossary:[],signal:new AbortController().signal,batchSize:10,onlyFailed:false,onRow:(_f,i,row)=>{f.rows[i]=row;},onProgress:()=>{}})).rejects.toThrow('limit');
+ expect(translate).toHaveBeenCalledTimes(1);expect(f.rows.map(r=>r.status)).toEqual(['failed','failed']);
+});
+it('caches context as a pair, not as misleading standalone fragments',async()=>{
+ const first=contextFixture(),second=contextFixture();const translate=vi.fn(async(texts:string[])=>texts.map(text=>({text:text.replace('I thought that','وام زانی').replace('you were coming.','تۆ دێیت.')})));
+ const run=(f:SessionFile)=>translateQueue([f],{provider:{name:'context-cache',translate},source:'en',glossary:[],signal:new AbortController().signal,batchSize:10,onlyFailed:false,onRow:(_f,i,row)=>{f.rows[i]=row;},onProgress:()=>{}});
+ await run(first);await run(second);expect(translate).toHaveBeenCalledTimes(1);expect(second.rows.map(r=>r.text)).toEqual(['وام زانی','تۆ دێیت.']);
+});

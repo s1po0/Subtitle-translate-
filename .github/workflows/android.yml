@@ -43,7 +43,10 @@ jobs:
           APK=android/app/build/outputs/apk/release/app-release.apk
           "$ANDROID_HOME/build-tools/$(ls "$ANDROID_HOME/build-tools" | sort -V | tail -1)/apksigner" verify --print-certs "$APK"
       - name: Live Google batch smoke test
-        run: node scripts/google-widget-smoke.mjs
+        run: |
+          set -o pipefail
+          node scripts/google-widget-smoke.mjs | tee "$RUNNER_TEMP/google-smoke.txt"
+          grep "Context boundary probe:" "$RUNNER_TEMP/google-smoke.txt" | sed "s/^/::notice::/"
       - name: Live multi-file benchmark
         continue-on-error: true
         run: node scripts/google-multifile-smoke.mjs
@@ -127,5 +130,5 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          cp apk/app-release.apk Rizhnus-3.0.apk
-          gh release create "apk-${{ github.run_id }}" Rizhnus-3.0.apk --repo "${{ github.repository }}" --target "${{ github.sha }}" --title "Rizhnus 3.0 APK" --notes "Signed Android APK. New mobile UI and app icon, local font and startup recovery screen. Video transcription remains experimental. Android emulator tests may be skipped for an explicitly marked release; see the workflow run for test results." --latest=false
+          cp apk/app-release.apk Rizhnus-3.1.apk
+          gh release create "apk-${{ github.run_id }}" Rizhnus-3.1.apk --repo "${{ github.repository }}" --target "${{ github.sha }}" --title "Rizhnus 3.1 APK" --notes "Signed Android APK. Conservative automatic English sentence-continuation handling, with single-cue fallback. Translation quality is not guaranteed; video transcription remains experimental. Android emulator tests may be skipped for an explicitly marked release; see the workflow run for test results." --latest=false

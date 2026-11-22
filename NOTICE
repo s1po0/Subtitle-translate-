@@ -18,3 +18,5 @@ Dependencies and their licenses are available in package-lock.json and the respe
 - W3C bidirectional text guidance: https://www.w3.org/International/geo/html-tech/tech-bidi.html — direction-mark research; no code copied.
 
 - Vazirmatn font by Rastikerdar, SIL Open Font License 1.1: https://github.com/rastikerdar/vazirmatn — bundled using @fontsource/vazirmatn for offline display.
+
+- Claude translation skill research (no source copied or runtime skill bundled): https://github.com/roshaw/claude-translation-agency (MIT) — terminology consistency and quality gates; https://github.com/shuji-bonji/s1000d-translate-skill (MIT) — segment boundaries and validating protected placeholders. These are LLM-oriented workflows, not translation engines.

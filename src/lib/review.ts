@@ -9,7 +9,7 @@ export function isIncomplete(cue:Cue,row:SessionRow):boolean {
 /** Conservative review hints, not a judgment of translation quality. */
 export function reviewHints(cue:Cue,row:SessionRow):{unchanged:boolean;fast:boolean;short:boolean;long:boolean} {
  if(row.status!=='done'&&row.status!=='edited')return {unchanged:false,fast:false,short:false,long:false};
- const strip=(text:string)=>text.replace(/<[^>]*>|\{\\[^}]*\}|\\[Nnh]|\[[^\]\n]+\]|♪/g,' ').replace(/\s+/g,' ').trim();
+ const strip=(text:string)=>text.replace(/<[^>]*>|\{\\[^}]*\}|\\[Nnh]|\[|\]|♪/g,' ').replace(/\s+/g,' ').trim();
  const source=strip(cue.text),translated=strip(row.text);
  const unchanged=Boolean(translated)&&/[a-zA-Z]/.test(source)&&source.toLocaleLowerCase()===translated.toLocaleLowerCase();
  const seconds=duration(cue);const fast=seconds>0&&Array.from(translated).length/seconds>20;

@@ -55,10 +55,10 @@ export class GoogleFree implements TranslationProvider {
   unique.forEach((text,i)=>{
    const translated=translations[i];
    if(typeof translated!=='string'||!translated.trim())throw new Error('وەڵامی Google بەتاڵ یان نادروستە.');
-   for(const marker of text.match(/ZXQ\d+QXZ/g)||[])if(!translated.includes(marker))throw new Error('پاراستنی نیشانەکانی ژێرنووس سەرکەوتوو نەبوو.');
+   for(const marker of text.match(/ZXQ\d+QXZ/g)||[])if(!translated.includes(marker)){const error=new Error('پاراستنی نیشانەکانی ژێرنووس سەرکەوتوو نەبوو.');error.name='ProtectedMarkerError';throw error;}
    results.set(text,{text:translated,detected:typeof languages[i]==='string'?languages[i] as string:undefined});
   });
   return texts.map(text=>text.trim()?results.get(text)!:{text});
  }
 }
-export async function withRetry<T>(fn:()=>Promise<T>,signal:AbortSignal):Promise<T> { let last:unknown; for(let i=0;i<4;i++) {if(signal.aborted) throw new DOMException('Cancelled','AbortError'); try {return await fn();} catch(e) {last=e; if(signal.aborted) throw e; if(i===3 || (e instanceof Error && e.name==='ProviderUnavailable') || (e instanceof Error && /Google \((400|401|403)\)/.test(e.message))) break; await new Promise<void>((resolve,reject)=>{const timer=setTimeout(resolve, 700*2**i+Math.random()*300); signal.addEventListener('abort',()=>{clearTimeout(timer);reject(new DOMException('Cancelled','AbortError'));},{once:true});});}} throw last; }
+export async function withRetry<T>(fn:()=>Promise<T>,signal:AbortSignal):Promise<T> { let last:unknown; for(let i=0;i<4;i++) {if(signal.aborted) throw new DOMException('Cancelled','AbortError'); try {return await fn();} catch(e) {last=e; if(signal.aborted) throw e; if(i===3 || (e instanceof Error && (e.name==='ProviderUnavailable'||e.name==='ProtectedMarkerError')) || (e instanceof Error && /Google \((400|401|403)\)/.test(e.message))) break; await new Promise<void>((resolve,reject)=>{const timer=setTimeout(resolve, 700*2**i+Math.random()*300); signal.addEventListener('abort',()=>{clearTimeout(timer);reject(new DOMException('Cancelled','AbortError'));},{once:true});});}} throw last; }
