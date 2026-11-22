@@ -123,5 +123,5 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          cp apk/app-release.apk Rizhnus-2.7.apk
-          gh release create "apk-${{ github.run_id }}" Rizhnus-2.7.apk --repo "${{ github.repository }}" --target "${{ github.sha }}" --title "Rizhnus 2.7 APK" --notes "Signed Android APK. Default RTL punctuation direction hints for subtitle exports; video transcription remains experimental." --latest=false
+          cp apk/app-release.apk Rizhnus-2.8.apk
+          gh release create "apk-${{ github.run_id }}" Rizhnus-2.8.apk --repo "${{ github.repository }}" --target "${{ github.sha }}" --title "Rizhnus 2.8 APK" --notes "Signed Android APK. Translates text inside square brackets and improves the mobile workspace; video transcription remains experimental." --latest=false
