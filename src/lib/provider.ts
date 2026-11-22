@@ -2,9 +2,9 @@ import { Capacitor, CapacitorHttp } from '@capacitor/core';
 export interface TranslationResult { text:string; detected?:string }
 export interface TranslationProvider { name:string; translate(texts:string[], source:string, signal:AbortSignal):Promise<TranslationResult[]> }
 export class GoogleCloud implements TranslationProvider {
- name='google-cloud'; constructor(private key:string) {}
+ name:string; constructor(private key:string,private target:'ckb'|'ku'='ckb') {this.name=target==='ckb'?'google-cloud':'google-cloud-ku';}
  async translate(texts:string[], source:string, signal:AbortSignal):Promise<TranslationResult[]> {
-  const res=await fetch('https://translation.googleapis.com/language/translate/v2?key='+encodeURIComponent(this.key), {method:'POST',signal,headers:{'Content-Type':'application/json'},body:JSON.stringify({q:texts,target:'ckb',format:'html',...(source==='auto'?{}:{source})})});
+  const res=await fetch('https://translation.googleapis.com/language/translate/v2?key='+encodeURIComponent(this.key), {method:'POST',signal,headers:{'Content-Type':'application/json'},body:JSON.stringify({q:texts,target:this.target,format:'html',...(source==='auto'?{}:{source})})});
   const data=await res.json(); if(!res.ok) throw new Error(`Google (${res.status}): ${data.error?.message || 'هەڵەی وەرگێڕان'}`);
   const out=data.data?.translations; if(!Array.isArray(out)||out.length!==texts.length) throw new Error('وەڵامی Google تەواو نییە.');
   return out.map((x:{translatedText:string;detectedSourceLanguage?:string})=>({text:x.translatedText,detected:x.detectedSourceLanguage}));
@@ -24,13 +24,13 @@ function rateLimit(headers?:Record<string,string>, existing=false):Error {
 const WIDGET_KEY='AIzaSyATBXajvzQLTDHEQbcpq0Ihe0vWDHmO520';
 const WIDGET_URL='https://translate-pa.googleapis.com/v1/translateHtml';
 export class GoogleFree implements TranslationProvider {
- name='google-free-widget-v1';
+ name:string; constructor(private target:'ckb'|'ku'='ckb'){this.name=target==='ckb'?'google-free-widget-v1':'google-free-widget-v1-ku';}
  async translate(texts:string[],source:string,signal:AbortSignal):Promise<TranslationResult[]> {
   if(signal.aborted) throw new DOMException('Cancelled','AbortError');
   if(Date.now()<rateLimitedUntil) throw rateLimit(undefined,true);
   const unique=[...new Set(texts.filter(t=>t.trim()))];
   if(!unique.length)return texts.map(text=>({text}));
-  const payload=[[unique,source,'ckb'],'te_lib'];
+  const payload=[[unique,source,this.target],'te_lib'];
   let data:unknown;
   try {
    if(Capacitor.isNativePlatform()){

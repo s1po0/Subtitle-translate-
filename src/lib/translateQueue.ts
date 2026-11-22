@@ -1,12 +1,13 @@
 import { getCachedBatch, setCachedBatch } from './cache';
 import { protect, restore } from './text';
 import { canJoinContinuation } from './context';
+import { kurmanjiHtml } from './kurmanji';
 import { withRetry, type TranslationProvider } from './provider';
 import type { SessionFile, SessionRow } from './session';
 
 export interface QueueOptions {
  provider:TranslationProvider; source:string; glossary:string[]; signal:AbortSignal; batchSize:number; onlyFailed:boolean;
- retranslate?:boolean; context?:boolean;
+ retranslate?:boolean; context?:boolean; target?:'ckb'|'ku';
  onRow?:(file:number,index:number,row:SessionRow,detected?:string)=>void;
  onRows?:(file:number,updates:{index:number;row:SessionRow;detected?:string}[])=>void;
  onProgress:(completed:number,total:number,file:number)=>void;
@@ -27,7 +28,7 @@ export async function translateQueue(files:SessionFile[],options:QueueOptions):P
    const boundary=indices.length===2?'RIZHBOUNDARYTOKEN':undefined;
    const input=indices.map(i=>cues[i].text).join(` ${boundary} `);
    const protectedText=protect(input,boundary?[...glossary,boundary]:glossary);
-   return {indices,...protectedText,boundary,key:JSON.stringify([provider.name,source,'ckb',boundary?'context-pair-v1':'single-v1',protectedText.html])};
+   return {indices,...protectedText,boundary,key:JSON.stringify([provider.name,source,options.target||'ckb',boundary?'context-pair-v1':'single-v1',protectedText.html])};
   };
   const groups:Item[]=[];
   for(let n=0;n<indices.length;n++){
@@ -36,7 +37,7 @@ export async function translateQueue(files:SessionFile[],options:QueueOptions):P
    else groups.push(make([i]));
   }
   const unpack=(item:Item,output:string):string[]=>{
-   const text=restore(output,item.tokens);
+   const text=restore(options.target==='ku'?kurmanjiHtml(output,item.html):output,item.tokens);
    if(!item.boundary)return [text];
    const split=text.split(item.boundary);
    if(split.length!==2||!split[0].trim()||!split[1].trim())throw new Error('سنووری دێڕی وەرگێڕان نادیارە.');

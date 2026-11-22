@@ -20,3 +20,5 @@ Dependencies and their licenses are available in package-lock.json and the respe
 - Vazirmatn font by Rastikerdar, SIL Open Font License 1.1: https://github.com/rastikerdar/vazirmatn — bundled using @fontsource/vazirmatn for offline display.
 
 - Claude translation skill research (no source copied or runtime skill bundled): https://github.com/roshaw/claude-translation-agency (MIT) — terminology consistency and quality gates; https://github.com/shuji-bonji/s1000d-translate-skill (MIT) — segment boundaries and validating protected placeholders. These are LLM-oriented workflows, not translation engines.
+
+- Kurdish alphabet reference (no code copied): https://badini.app/badini-alphabet — Hawar and Arabic-script letter correspondences; the mapping in this application is independently implemented and approximate.

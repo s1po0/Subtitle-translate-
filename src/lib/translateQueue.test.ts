@@ -69,3 +69,13 @@ it('caches context as a pair, not as misleading standalone fragments',async()=>{
  const run=(f:SessionFile)=>translateQueue([f],{provider:{name:'context-cache',translate},source:'en',glossary:[],signal:new AbortController().signal,batchSize:10,onlyFailed:false,onRow:(_f,i,row)=>{f.rows[i]=row;},onProgress:()=>{}});
  await run(first);await run(second);expect(translate).toHaveBeenCalledTimes(1);expect(second.rows.map(r=>r.text)).toEqual(['وام زانی','تۆ دێیت.']);
 });
+
+it('keeps translations and cache separated by target, with tags and glossary preserved',async()=>{
+ const doc=parseSubtitle('1\n00:00:01,000 --> 00:00:02,000\n<i>Hello John</i>','srt');
+ const make=():SessionFile=>({doc,name:'target.srt',encoding:'utf-8',rows:[{text:'',status:'pending'}],output:'srt',detected:''});
+ const translate=vi.fn(async(texts:string[])=>texts.map(text=>({text:text.replace('Hello','Silav')})));
+ const run=(file:SessionFile,target:'ckb'|'ku')=>translateQueue([file],{provider:{name:'target-cache-check',translate},source:'en',glossary:['John'],target,signal:new AbortController().signal,batchSize:10,onlyFailed:false,onRow:(_f,i,row)=>{file.rows[i]=row;},onProgress:()=>{}});
+ const ku=make(),ckb=make(),again=make();await run(ku,'ku');await run(ckb,'ckb');await run(again,'ku');
+ expect(translate).toHaveBeenCalledTimes(2);expect(ku.rows[0].text).toBe('<i>سلاڤ John</i>');expect(ckb.rows[0].text).toBe('<i>Silav John</i>');expect(again.rows[0]).toEqual(ku.rows[0]);
+ expect(doc.cues[0].start).toBe('00:00:01,000');expect(doc.cues[0].end).toBe('00:00:02,000');
+});
