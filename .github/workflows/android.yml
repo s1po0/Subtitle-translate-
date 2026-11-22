@@ -53,12 +53,14 @@ jobs:
           path: android/app/build/outputs/apk/release/app-release.apk
           if-no-files-found: error
       - name: Generate synthetic audio test fixture
+        if: ${{ !contains(github.event.head_commit.message, '[skip-emulator]') }}
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y -qq ffmpeg
           mkdir -p android/app/src/androidTest/assets
           ffmpeg -hide_banner -loglevel error -f lavfi -i 'sine=frequency=440:sample_rate=44100:duration=1800' -c:a aac -b:a 48k android/app/src/androidTest/assets/fixture.m4a
       - name: Build emulator test packages
+        if: ${{ !contains(github.event.head_commit.message, '[skip-emulator]') }}
         working-directory: android
         run: |
           ./gradlew :app:assembleDebug :app:assembleDebugAndroidTest > "$RUNNER_TEMP/android-test-build.log" 2>&1 || {
@@ -66,6 +68,7 @@ jobs:
             exit 1
           }
       - uses: actions/upload-artifact@v4
+        if: ${{ !contains(github.event.head_commit.message, '[skip-emulator]') }}
         with:
           name: android-emulator-test
           path: |
@@ -77,6 +80,7 @@ jobs:
         run: rm -f "$RUNNER_TEMP/rizhnus-signing.p12"
   emulator-smoke:
     needs: build
+    if: ${{ !contains(github.event.head_commit.message, '[skip-emulator]') }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/download-artifact@v4
@@ -112,16 +116,16 @@ jobs:
 
   publish:
     needs: [build, emulator-smoke]
-    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[publish-apk]')
+    if: ${{ always() && needs.build.result == 'success' && (needs.emulator-smoke.result == 'success' || (contains(github.event.head_commit.message, '[skip-emulator]') && needs.emulator-smoke.result == 'skipped')) && (github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[publish-apk]')) }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/download-artifact@v4
         with:
           name: rizhnus-signed-apk
           path: apk
-      - name: Publish tested direct APK
+      - name: Publish signed direct APK
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           cp apk/app-release.apk Rizhnus-2.8.apk
-          gh release create "apk-${{ github.run_id }}" Rizhnus-2.8.apk --repo "${{ github.repository }}" --target "${{ github.sha }}" --title "Rizhnus 2.8 APK" --notes "Signed Android APK. Translates text inside square brackets and improves the mobile workspace; video transcription remains experimental." --latest=false
+          gh release create "apk-${{ github.run_id }}" Rizhnus-2.8.apk --repo "${{ github.repository }}" --target "${{ github.sha }}" --title "Rizhnus 2.8 APK" --notes "Signed Android APK. Translates text inside square brackets and improves the mobile workspace; video transcription remains experimental. Android emulator tests may be skipped for an explicitly marked release; see the workflow run for test results." --latest=false
