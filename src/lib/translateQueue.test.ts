@@ -79,3 +79,12 @@ it('keeps translations and cache separated by target, with tags and glossary pre
  expect(translate).toHaveBeenCalledTimes(2);expect(ku.rows[0].text).toBe('<i>سلاڤ John</i>');expect(ckb.rows[0].text).toBe('<i>Silav John</i>');expect(again.rows[0]).toEqual(ku.rows[0]);
  expect(doc.cues[0].start).toBe('00:00:01,000');expect(doc.cues[0].end).toBe('00:00:02,000');
 });
+
+it('converts suspected Latin names for Arabic to Sorani, keeps protected names and respects the setting and cache',async()=>{
+ const doc=parseSubtitle('1\n00:00:01,000 --> 00:00:03,000\n<i>مرحبا طارق John</i>','srt');
+ const make=():SessionFile=>({doc,name:'arabic.srt',encoding:'utf-8',rows:[{text:'',status:'pending'}],output:'srt',detected:''});
+ const translate=vi.fn(async(texts:string[])=>texts.map(text=>({text:text.replace('مرحبا طارق','سڵاو Tariq')})));
+ const run=(f:SessionFile,arabicNames:boolean)=>translateQueue([f],{provider:{name:'arabic-names-cache',translate},source:'ar',target:'ckb',glossary:['John'],arabicNames,signal:new AbortController().signal,batchSize:10,onlyFailed:false,onRow:(_f,i,row)=>{f.rows[i]=row;},onProgress:()=>{}});
+ const a=make(),b=make();await run(a,true);await run(b,false);
+ expect(a.rows[0].text).toBe('<i>سڵاو تاریق John</i>');expect(b.rows[0].text).toBe('<i>سڵاو Tariq John</i>');expect(translate).toHaveBeenCalledTimes(1);expect(doc.cues[0].start).toBe('00:00:01,000');expect(doc.cues[0].end).toBe('00:00:03,000');
+});
